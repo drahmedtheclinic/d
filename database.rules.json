@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "patients": {
+      ".indexOn": ["code", "code_str", "status", "name_lower", "createdAt", "sentToDoctorAt"]
+    },
+    "followups": {
+      "$patientId": {
+        ".indexOn": ["createdAt", "date"]
+      }
+    }
+  }
+}

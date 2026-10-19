@@ -1,11 +1,5 @@
-import {
-  collection,
-  collectionGroup,
-  getDocs,
-  query,
-  limit,
-} from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from './firebase';
+import { ref, get } from 'firebase/database';
+import { rtdb, handleDatabaseError, OperationType } from './firebase';
 import { Patient, FollowupVisit } from '../types';
 
 export interface TrendPoint {
@@ -40,31 +34,40 @@ const ARABIC_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأ
 
 export async function fetchClinicStatistics(): Promise<ClinicStatistics> {
   try {
-    // 1. Fetch Patients
-    const patientsSnap = await getDocs(query(collection(db, 'patients'), limit(250)));
+    // 1. Fetch Patients from Realtime Database
+    const patientsSnap = await get(ref(rtdb, 'patients'));
     const patients: Patient[] = [];
-    patientsSnap.forEach((docSnap) => {
-      patients.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-    });
-
-    // 2. Fetch Follow-ups (collectionGroup)
-    let followups: FollowupVisit[] = [];
-    try {
-      const followupsSnap = await getDocs(query(collectionGroup(db, 'followups'), limit(250)));
-      followupsSnap.forEach((docSnap) => {
-        followups.push({ id: docSnap.id, ...docSnap.data() } as FollowupVisit);
-      });
-    } catch (fgErr) {
-      console.warn('CollectionGroup followups error, fallback to individual patient followups', fgErr);
-      // Fallback: fetch followups per patient if collectionGroup isn't ready
-      for (const p of patients.slice(0, 15)) {
-        try {
-          const subSnap = await getDocs(collection(db, 'patients', p.id, 'followups'));
-          subSnap.forEach((docSnap) => {
-            followups.push({ id: docSnap.id, ...docSnap.data() } as FollowupVisit);
-          });
-        } catch (_) {}
+    if (patientsSnap.exists()) {
+      const rawPatients = patientsSnap.val() as Record<string, any>;
+      for (const [id, data] of Object.entries(rawPatients)) {
+        if (data && typeof data === 'object') {
+          patients.push({ ...(data as object), id } as Patient);
+        }
       }
+    }
+
+    // 2. Fetch Follow-ups from Realtime Database (followups/{patientId}/{followupId})
+    const followups: FollowupVisit[] = [];
+    try {
+      const followupsSnap = await get(ref(rtdb, 'followups'));
+      if (followupsSnap.exists()) {
+        const rawByPatient = followupsSnap.val() as Record<string, Record<string, any>>;
+        for (const [patientId, patientFollowups] of Object.entries(rawByPatient)) {
+          if (patientFollowups && typeof patientFollowups === 'object') {
+            for (const [fId, fData] of Object.entries(patientFollowups)) {
+              if (fData && typeof fData === 'object') {
+                followups.push({
+                  ...(fData as object),
+                  id: fId,
+                  patientId,
+                } as FollowupVisit);
+              }
+            }
+          }
+        }
+      }
+    } catch (fgErr) {
+      console.warn('Realtime Database followups fetch warning:', fgErr);
     }
 
     // Status counts
@@ -75,7 +78,7 @@ export async function fetchClinicStatistics(): Promise<ClinicStatistics> {
     // Helper to get date string YYYY-MM-DD
     const getDateString = (dateObj: any): string => {
       if (!dateObj) return new Date().toISOString().split('T')[0];
-      const d = dateObj.toDate ? dateObj.toDate() : new Date(dateObj);
+      const d = typeof dateObj?.toDate === 'function' ? dateObj.toDate() : new Date(dateObj);
       return isNaN(d.getTime())
         ? new Date().toISOString().split('T')[0]
         : d.toISOString().split('T')[0];
@@ -113,12 +116,6 @@ export async function fetchClinicStatistics(): Promise<ClinicStatistics> {
         last7Days[fDate].followups += 1;
       }
     });
-
-    // If all real patients were added just now or data is sparse, ensure historical preview data looks great
-    const totalCountedInDays = Object.values(last7Days).reduce(
-      (sum, item) => sum + item.newPatients + item.followups,
-      0
-    );
 
     // Prepare Daily Data array directly from actual data
     const dailyData: TrendPoint[] = Object.entries(last7Days).map(([dateKey, val]) => {
@@ -208,6 +205,6 @@ export async function fetchClinicStatistics(): Promise<ClinicStatistics> {
       statusDistribution,
     };
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'patients');
+    handleDatabaseError(error, OperationType.LIST, 'patients');
   }
 }

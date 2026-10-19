@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Patient } from '../types';
 import {
   listenToDoctorQueue,
+  listenToPatients,
   searchPatients,
   getRecentPatients,
 } from '../lib/patientsService';
@@ -71,7 +72,19 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
 
   useEffect(() => {
     if (activeTab === 'archive') {
-      loadRecent();
+      setRecentLoading(true);
+      const unsubscribe = listenToPatients(
+        50,
+        (list) => {
+          setRecentPatients(list);
+          setRecentLoading(false);
+        },
+        (err) => {
+          console.error(err);
+          setRecentLoading(false);
+        }
+      );
+      return () => unsubscribe();
     }
   }, [activeTab]);
 

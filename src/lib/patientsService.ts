@@ -1,20 +1,13 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  serverTimestamp,
+  ref,
+  get,
+  set,
+  update,
+  push,
+  onValue,
   runTransaction,
-  Timestamp,
-} from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from './firebase';
+} from 'firebase/database';
+import { rtdb, handleDatabaseError, OperationType } from './firebase';
 import { Patient, PatientStatus, FollowupVisit, UserProfile } from '../types';
 
 export function normalizeArabic(text: string): string {
@@ -35,61 +28,72 @@ export function convertArabicToEnglishDigits(str: string): string {
     .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
 }
 
+export function toMillis(ts: any): number {
+  if (!ts) return 0;
+  if (typeof ts === 'number') return ts;
+  if (typeof ts?.toMillis === 'function') return ts.toMillis();
+  if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+  if (typeof ts === 'string') {
+    const parsed = Date.parse(ts);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+function parsePatientsSnapshot(val: Record<string, any> | null | undefined): Patient[] {
+  if (!val || typeof val !== 'object') return [];
+  return Object.entries(val).map(([id, data]) => ({
+    ...(data as object),
+    id,
+  })) as Patient[];
+}
+
 /**
- * Atomic transaction to get and increment sequential patient code
+ * Atomic transaction in Realtime Database to get and increment sequential patient code
  */
 export async function getNextPatientCode(): Promise<number> {
-  const counterRef = doc(db, 'counters', 'patients');
+  const counterRef = ref(rtdb, 'counters/patients/current');
   try {
-    const nextCode = await runTransaction(db, async (transaction) => {
-      const counterDoc = await transaction.get(counterRef);
-      if (!counterDoc.exists()) {
-        const initialCode = 1001;
-        transaction.set(counterRef, { current: initialCode });
-        return initialCode;
+    const result = await runTransaction(counterRef, (currentValue) => {
+      if (currentValue === null || typeof currentValue !== 'number' || currentValue < 1000) {
+        return 1001;
       }
-      const newCode = (counterDoc.data().current || 1000) + 1;
-      transaction.update(counterRef, { current: newCode });
-      return newCode;
+      return currentValue + 1;
     });
-    return nextCode;
+    return (result.snapshot.val() as number) || 1001;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'counters/patients');
+    handleDatabaseError(error, OperationType.WRITE, 'counters/patients/current');
   }
 }
 
 /**
- * Fetch patient by sequential code number
+ * Fetch patient by sequential code number from Realtime Database
  */
 export async function getPatientByCode(rawCode: number | string): Promise<Patient | null> {
-  const converted = typeof rawCode === 'string'
-    ? convertArabicToEnglishDigits(rawCode).replace(/^#/, '').trim()
-    : rawCode;
+  const converted =
+    typeof rawCode === 'string'
+      ? convertArabicToEnglishDigits(rawCode).replace(/^#/, '').trim()
+      : rawCode;
   const num = Number(converted);
   if (!num || isNaN(num)) return null;
-  const patientsCol = collection(db, 'patients');
+
   try {
-    const q = query(patientsCol, where('code', '==', num), limit(1));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const docSnap = snap.docs[0];
-      return { id: docSnap.id, ...docSnap.data() } as Patient;
-    }
-    const qStr = query(patientsCol, where('code_str', '==', String(num)), limit(1));
-    const snapStr = await getDocs(qStr);
-    if (!snapStr.empty) {
-      const docSnap = snapStr.docs[0];
-      return { id: docSnap.id, ...docSnap.data() } as Patient;
-    }
-    return null;
+    const snap = await get(ref(rtdb, 'patients'));
+    if (!snap.exists()) return null;
+
+    const patients = parsePatientsSnapshot(snap.val());
+    const found = patients.find(
+      (p) => Number(p.code) === num || String(p.code) === String(num)
+    );
+    return found || null;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, 'patients');
+    handleDatabaseError(error, OperationType.GET, 'patients');
     return null;
   }
 }
 
 /**
- * Creates a new patient record with a manual code or auto-generated sequential number
+ * Creates a new patient record in Realtime Database with a manual code or auto-generated sequential number
  */
 export async function createPatient(
   patientData: {
@@ -107,13 +111,20 @@ export async function createPatient(
   },
   user: UserProfile
 ): Promise<string> {
-  const patientCol = collection(db, 'patients');
-  const newDocRef = doc(patientCol);
+  const patientsRef = ref(rtdb, 'patients');
+  const newPatientRef = push(patientsRef);
+  const patientId = newPatientRef.key!;
 
   try {
     let cleanCodeNum: number | null = null;
-    if (patientData.code !== undefined && patientData.code !== null && String(patientData.code).trim() !== '') {
-      const converted = convertArabicToEnglishDigits(String(patientData.code)).replace(/^#/, '').trim();
+    if (
+      patientData.code !== undefined &&
+      patientData.code !== null &&
+      String(patientData.code).trim() !== ''
+    ) {
+      const converted = convertArabicToEnglishDigits(String(patientData.code))
+        .replace(/^#/, '')
+        .trim();
       const num = Number(converted);
       if (!isNaN(num) && num > 0) {
         cleanCodeNum = num;
@@ -125,20 +136,19 @@ export async function createPatient(
     } else {
       // Keep counter ahead of any manually entered code
       try {
-        const counterRef = doc(db, 'counters', 'patients');
-        await runTransaction(db, async (t) => {
-          const cSnap = await t.get(counterRef);
-          const curr = cSnap.exists() ? (cSnap.data().current || 1000) : 1000;
-          if (cleanCodeNum! >= curr) {
-            t.set(counterRef, { current: cleanCodeNum! + 1 }, { merge: true });
-          }
+        const counterRef = ref(rtdb, 'counters/patients/current');
+        await runTransaction(counterRef, (curr) => {
+          const currentNum = typeof curr === 'number' ? curr : 1000;
+          return cleanCodeNum! >= currentNum ? cleanCodeNum! : currentNum;
         });
       } catch (_) {}
     }
 
     const cleanName = patientData.name.trim();
+    const now = Date.now();
 
-    await setDoc(newDocRef, {
+    await set(newPatientRef, {
+      id: patientId,
       code: cleanCodeNum,
       code_str: String(cleanCodeNum),
       name: cleanName,
@@ -152,23 +162,23 @@ export async function createPatient(
       diagnosis: patientData.diagnosis ? patientData.diagnosis.trim() : '',
       rx: patientData.rx ? patientData.rx.trim() : '',
       status: patientData.status,
-      sentToDoctorAt: patientData.status === 'sent_to_doctor' ? serverTimestamp() : null,
+      sentToDoctorAt: patientData.status === 'sent_to_doctor' ? now : null,
       createdBy: user.uid,
       createdByName: user.name,
-      createdAt: serverTimestamp(),
+      createdAt: now,
       updatedBy: user.uid,
       updatedByName: user.name,
-      updatedAt: serverTimestamp(),
+      updatedAt: now,
     });
 
-    return newDocRef.id;
+    return patientId;
   } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'patients');
+    handleDatabaseError(error, OperationType.CREATE, 'patients');
   }
 }
 
 /**
- * Updates patient demographics (Secretary or Doctor)
+ * Updates patient demographics (Secretary or Doctor) in Realtime Database
  */
 export async function updatePatientDemographics(
   patientId: string,
@@ -181,7 +191,7 @@ export async function updatePatientDemographics(
   },
   user: UserProfile
 ): Promise<void> {
-  const patientRef = doc(db, 'patients', patientId);
+  const patientRef = ref(rtdb, `patients/${patientId}`);
   const cleanName = data.name.trim();
 
   const payload: Record<string, any> = {
@@ -192,11 +202,13 @@ export async function updatePatientDemographics(
     phone: data.phone.trim(),
     updatedBy: user.uid,
     updatedByName: user.name,
-    updatedAt: serverTimestamp(),
+    updatedAt: Date.now(),
   };
 
   if (data.code !== undefined && data.code !== null && String(data.code).trim() !== '') {
-    const converted = convertArabicToEnglishDigits(String(data.code)).replace(/^#/, '').trim();
+    const converted = convertArabicToEnglishDigits(String(data.code))
+      .replace(/^#/, '')
+      .trim();
     const num = Number(converted);
     if (!isNaN(num) && num > 0) {
       payload.code = num;
@@ -205,41 +217,42 @@ export async function updatePatientDemographics(
   }
 
   try {
-    await updateDoc(patientRef, payload);
+    await update(patientRef, payload);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `patients/${patientId}`);
+    handleDatabaseError(error, OperationType.UPDATE, `patients/${patientId}`);
   }
 }
 
 /**
- * Updates patient status (e.g. sent_to_doctor, seen, with_secretary)
+ * Updates patient status (e.g. sent_to_doctor, seen, with_secretary) in Realtime Database
  */
 export async function updatePatientStatus(
   patientId: string,
   status: PatientStatus,
   user: UserProfile
 ): Promise<void> {
-  const patientRef = doc(db, 'patients', patientId);
+  const patientRef = ref(rtdb, `patients/${patientId}`);
+  const now = Date.now();
   const updatePayload: Record<string, any> = {
     status,
     updatedBy: user.uid,
     updatedByName: user.name,
-    updatedAt: serverTimestamp(),
+    updatedAt: now,
   };
 
   if (status === 'sent_to_doctor') {
-    updatePayload.sentToDoctorAt = serverTimestamp();
+    updatePayload.sentToDoctorAt = now;
   }
 
   try {
-    await updateDoc(patientRef, updatePayload);
+    await update(patientRef, updatePayload);
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `patients/${patientId}`);
+    handleDatabaseError(error, OperationType.UPDATE, `patients/${patientId}`);
   }
 }
 
 /**
- * Updates clinical fields (Doctor only)
+ * Updates clinical fields (Doctor only) in Realtime Database
  */
 export async function updatePatientClinical(
   patientId: string,
@@ -252,9 +265,9 @@ export async function updatePatientClinical(
   },
   user: UserProfile
 ): Promise<void> {
-  const patientRef = doc(db, 'patients', patientId);
+  const patientRef = ref(rtdb, `patients/${patientId}`);
   try {
-    await updateDoc(patientRef, {
+    await update(patientRef, {
       co: clinicalData.co,
       oe: clinicalData.oe,
       investigation: clinicalData.investigation,
@@ -262,169 +275,152 @@ export async function updatePatientClinical(
       rx: clinicalData.rx,
       updatedBy: user.uid,
       updatedByName: user.name,
-      updatedAt: serverTimestamp(),
+      updatedAt: Date.now(),
     });
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `patients/${patientId}`);
+    handleDatabaseError(error, OperationType.UPDATE, `patients/${patientId}`);
   }
 }
 
 /**
- * Fetch a single patient by ID
+ * Fetch a single patient by ID from Realtime Database
  */
 export async function getPatientById(patientId: string): Promise<Patient | null> {
-  const patientRef = doc(db, 'patients', patientId);
+  const patientRef = ref(rtdb, `patients/${patientId}`);
   try {
-    const snap = await getDoc(patientRef);
+    const snap = await get(patientRef);
     if (!snap.exists()) return null;
-    return { id: snap.id, ...snap.data() } as Patient;
+    return { ...(snap.val() as object), id: patientId } as Patient;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, `patients/${patientId}`);
+    handleDatabaseError(error, OperationType.GET, `patients/${patientId}`);
   }
 }
 
 /**
- * Search patients by code (exact) or by name prefix (name_lower)
+ * Search patients by code, phone, or Arabic name in Realtime Database
  */
 export async function searchPatients(rawQuery: string): Promise<Patient[]> {
   const queryStr = rawQuery.trim();
   if (!queryStr) return [];
 
-  const patientsCol = collection(db, 'patients');
-  const results: Patient[] = [];
-
-  // Check if search query is numeric (e.g. code: 1001, #1001, or ١٠٠١)
   const converted = convertArabicToEnglishDigits(queryStr).replace(/^#/, '').trim();
   const numericCode = Number(converted);
-  if (!isNaN(numericCode) && numericCode > 0) {
-    try {
-      const q = query(patientsCol, where('code', '==', numericCode), limit(5));
-      const snap = await getDocs(q);
-      snap.forEach((docSnap) => {
-        results.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-      });
-
-      // Also check code_str
-      if (results.length === 0) {
-        const qStr = query(patientsCol, where('code_str', '==', String(numericCode)), limit(5));
-        const snapStr = await getDocs(qStr);
-        snapStr.forEach((docSnap) => {
-          results.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-        });
-      }
-
-      if (results.length > 0) {
-        return results;
-      }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, 'patients');
-    }
-  }
-
-  // Name prefix search using normalized Arabic
   const normalized = normalizeArabic(queryStr);
-  try {
-    const q = query(
-      patientsCol,
-      where('name_lower', '>=', normalized),
-      where('name_lower', '<=', normalized + '\uf8ff'),
-      limit(20)
-    );
-    const snap = await getDocs(q);
-    snap.forEach((docSnap) => {
-      if (!results.some((r) => r.id === docSnap.id)) {
-        results.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-      }
-    });
 
-    // In-memory fallback check across recent patients by code, phone, or name
-    const recentQ = query(patientsCol, limit(100));
-    const recentSnap = await getDocs(recentQ);
-    recentSnap.forEach((docSnap) => {
-      const p = { id: docSnap.id, ...docSnap.data() } as Patient;
-      const codeMatch =
-        (numericCode > 0 && p.code === numericCode) ||
-        String(p.code) === converted ||
-        String(p.code || '').includes(converted);
+  try {
+    const snap = await get(ref(rtdb, 'patients'));
+    if (!snap.exists()) return [];
+
+    const allPatients = parsePatientsSnapshot(snap.val());
+
+    // Exact code matches first
+    const exactCodeMatches: Patient[] = [];
+    const otherMatches: Patient[] = [];
+
+    for (const p of allPatients) {
+      const isExactCode =
+        (!isNaN(numericCode) && numericCode > 0 && Number(p.code) === numericCode) ||
+        String(p.code) === converted;
+
+      if (isExactCode) {
+        exactCodeMatches.push(p);
+        continue;
+      }
+
+      const partialCodeMatch = converted && String(p.code || '').includes(converted);
       const phoneMatch =
-        p.phone?.includes(queryStr) ||
-        (converted && p.phone?.includes(converted));
+        p.phone?.includes(queryStr) || (converted && p.phone?.includes(converted));
       const nameMatch =
         p.name?.includes(queryStr) ||
         normalizeArabic(p.name || '').includes(normalized);
 
-      if (codeMatch || phoneMatch || nameMatch) {
-        if (!results.some((r) => r.id === p.id)) {
-          results.push(p);
-        }
+      if (partialCodeMatch || phoneMatch || nameMatch) {
+        otherMatches.push(p);
       }
-    });
+    }
 
-    return results;
+    otherMatches.sort((a, b) => (Number(b.code) || 0) - (Number(a.code) || 0));
+    return [...exactCodeMatches, ...otherMatches];
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'patients');
-    return results;
+    handleDatabaseError(error, OperationType.LIST, 'patients');
+    return [];
   }
 }
 
 /**
- * Fetch recent patients
+ * Fetch recent patients from Realtime Database
  */
 export async function getRecentPatients(limitCount: number = 25): Promise<Patient[]> {
-  const patientsCol = collection(db, 'patients');
   try {
-    const q = query(patientsCol, limit(limitCount));
-    const snap = await getDocs(q);
-    const list: Patient[] = [];
-    snap.forEach((docSnap) => {
-      list.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-    });
-    // Sort in memory by code descending
-    return list.sort((a, b) => (b.code || 0) - (a.code || 0));
+    const snap = await get(ref(rtdb, 'patients'));
+    if (!snap.exists()) return [];
+
+    const list = parsePatientsSnapshot(snap.val());
+    list.sort((a, b) => (Number(b.code) || 0) - (Number(a.code) || 0));
+    return list.slice(0, limitCount);
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'patients');
+    handleDatabaseError(error, OperationType.LIST, 'patients');
   }
 }
 
 /**
- * Live queue for doctor (patients with status sent_to_doctor)
+ * Live listener for all recent patients in Realtime Database
+ */
+export function listenToPatients(
+  limitCount: number = 50,
+  onPatientsUpdate: (patients: Patient[]) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const patientsRef = ref(rtdb, 'patients');
+  return onValue(
+    patientsRef,
+    (snapshot) => {
+      const list = snapshot.exists() ? parsePatientsSnapshot(snapshot.val()) : [];
+      list.sort((a, b) => (Number(b.code) || 0) - (Number(a.code) || 0));
+      onPatientsUpdate(list.slice(0, limitCount));
+    },
+    (error) => {
+      if (onError) onError(error);
+      console.error('Realtime Database listenToPatients error:', error);
+    }
+  );
+}
+
+/**
+ * Live queue for doctor (patients with status sent_to_doctor) in Realtime Database
  */
 export function listenToDoctorQueue(
   onQueueUpdate: (patients: Patient[]) => void,
   onError?: (error: Error) => void
 ): () => void {
-  const patientsCol = collection(db, 'patients');
-  const q = query(
-    patientsCol,
-    where('status', '==', 'sent_to_doctor')
-  );
+  const patientsRef = ref(rtdb, 'patients');
 
-  return onSnapshot(
-    q,
+  return onValue(
+    patientsRef,
     (snapshot) => {
-      const patients: Patient[] = [];
-      snapshot.forEach((docSnap) => {
-        patients.push({ id: docSnap.id, ...docSnap.data() } as Patient);
-      });
+      const allPatients = snapshot.exists() ? parsePatientsSnapshot(snapshot.val()) : [];
+      const queue = allPatients.filter((p) => p.status === 'sent_to_doctor');
+
       // Sort newest sent to doctor first
-      patients.sort((a, b) => {
-        const timeA = a.sentToDoctorAt?.toMillis ? a.sentToDoctorAt.toMillis() : (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0);
-        const timeB = b.sentToDoctorAt?.toMillis ? b.sentToDoctorAt.toMillis() : (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0);
+      queue.sort((a, b) => {
+        const timeA = toMillis(a.sentToDoctorAt) || toMillis(a.createdAt);
+        const timeB = toMillis(b.sentToDoctorAt) || toMillis(b.createdAt);
         return timeB - timeA;
       });
-      onQueueUpdate(patients);
+
+      onQueueUpdate(queue);
     },
     (error) => {
       if (onError) {
         onError(error);
       }
-      handleFirestoreError(error, OperationType.LIST, 'patients');
+      console.error('Realtime Database listenToDoctorQueue error:', error);
     }
   );
 }
 
 /**
- * Subcollection Followup Visits: Add visit
+ * Followup Visits: Add visit in Realtime Database
  */
 export async function addFollowupVisit(
   patientId: string,
@@ -435,68 +431,70 @@ export async function addFollowupVisit(
   },
   user: UserProfile
 ): Promise<string> {
-  const followupsCol = collection(db, 'patients', patientId, 'followups');
-  const newFollowupRef = doc(followupsCol);
+  const followupsRef = ref(rtdb, `followups/${patientId}`);
+  const newFollowupRef = push(followupsRef);
+  const followupId = newFollowupRef.key!;
+  const now = Date.now();
 
   try {
-    await setDoc(newFollowupRef, {
+    await set(newFollowupRef, {
+      id: followupId,
       patientId,
       date: data.date,
       notes: data.notes,
       status: data.status,
       createdBy: user.uid,
       createdByName: user.name,
-      createdAt: serverTimestamp(),
+      createdAt: now,
     });
 
-    // Update parent patient document's updatedAt and status if sent to doctor
-    const patientRef = doc(db, 'patients', patientId);
+    // Update parent patient node's updatedAt and status if sent to doctor
+    const patientRef = ref(rtdb, `patients/${patientId}`);
     const updatePatientData: Record<string, any> = {
       updatedBy: user.uid,
       updatedByName: user.name,
-      updatedAt: serverTimestamp(),
+      updatedAt: now,
     };
 
     if (data.status === 'sent_to_doctor') {
       updatePatientData.status = 'sent_to_doctor';
-      updatePatientData.sentToDoctorAt = serverTimestamp();
+      updatePatientData.sentToDoctorAt = now;
     }
 
-    await updateDoc(patientRef, updatePatientData);
+    await update(patientRef, updatePatientData);
 
-    return newFollowupRef.id;
+    return followupId;
   } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, `patients/${patientId}/followups`);
+    handleDatabaseError(error, OperationType.CREATE, `followups/${patientId}`);
   }
 }
 
 /**
- * Subcollection Followup Visits: Listen to visits
+ * Followup Visits: Listen to visits in Realtime Database
  */
 export function listenToFollowups(
   patientId: string,
   onUpdate: (followups: FollowupVisit[]) => void,
   onError?: (error: Error) => void
 ): () => void {
-  const followupsCol = collection(db, 'patients', patientId, 'followups');
-  return onSnapshot(
-    followupsCol,
+  const followupsRef = ref(rtdb, `followups/${patientId}`);
+  return onValue(
+    followupsRef,
     (snapshot) => {
       const list: FollowupVisit[] = [];
-      snapshot.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...docSnap.data() } as FollowupVisit);
-      });
+      if (snapshot.exists()) {
+        const raw = snapshot.val() as Record<string, any>;
+        for (const [id, item] of Object.entries(raw)) {
+          list.push({ ...(item as object), id } as FollowupVisit);
+        }
+      }
       // Sort newest first
-      list.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-        return timeB - timeA;
-      });
+      list.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
       onUpdate(list);
     },
     (error) => {
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.LIST, `patients/${patientId}/followups`);
+      console.error('Realtime Database listenToFollowups error:', error);
     }
   );
 }
