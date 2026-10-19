@@ -1,12 +1,10 @@
 {
-  "projectId": "scientific-armor-hvr20",
-  "appId": "1:266539279620:web:e3d977711ea85560a85c51",
-  "apiKey": "AIzaSyAL5odpZ6U-Yi93EbrhbSHJdfffsU1PpGo",
-  "authDomain": "scientific-armor-hvr20.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-5b5a3b3f-692d-47e7-8c2e-92d8f53bc744",
-  "storageBucket": "scientific-armor-hvr20.firebasestorage.app",
-  "messagingSenderId": "266539279620",
-  "measurementId": "",
-  "oAuthClientId": "266539279620-5fl6sn7lbnqkr9l0rt7jsc84aubi56cm.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "apiKey": "AIzaSyCD51mjAM_nTtoPkKCGkhLWW19vaHmSHiw",
+  "authDomain": "gotv-player.firebaseapp.com",
+  "databaseURL": "https://gotv-player-default-rtdb.firebaseio.com",
+  "projectId": "gotv-player",
+  "storageBucket": "gotv-player.firebasestorage.app",
+  "messagingSenderId": "934553809484",
+  "appId": "1:934553809484:web:42f36affa45cc34333fae9",
+  "measurementId": "G-HM6MQDFNTB"
 }

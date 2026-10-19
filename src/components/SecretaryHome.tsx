@@ -4,6 +4,7 @@ import { Patient, PatientStatus } from '../types';
 import {
   searchPatients,
   getRecentPatients,
+  listenToPatients,
   updatePatientStatus,
 } from '../lib/patientsService';
 import { PatientFormModal } from './PatientFormModal';
@@ -55,7 +56,20 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
   };
 
   useEffect(() => {
-    loadRecent();
+    setLoadingRecent(true);
+    const unsubscribe = listenToPatients(
+      50,
+      (list) => {
+        setRecentPatients(list);
+        setLoadingRecent(false);
+      },
+      (err) => {
+        console.error(err);
+        setLoadingRecent(false);
+        showToast('تعذر الاتصال بـ Realtime Database: تأكد من تفعيل صلاحيات القراءة والكتابة في Rules', 'error');
+      }
+    );
+    return () => unsubscribe();
   }, []);
 
   // Search handler
