@@ -40,64 +40,64 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2">
+        <div className="grid grid-cols-2 items-center gap-x-2 gap-y-2 py-3 lg:flex lg:justify-between lg:h-16 lg:py-0">
           {/* Logo & Clinic Branding */}
-          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+          <div className="contents lg:flex lg:items-center lg:gap-5">
             <div
               onClick={() => {
                 onNavigate('records');
                 onGoHome();
               }}
-              className="flex items-center gap-2.5 cursor-pointer group select-none"
+              className="order-1 min-w-0 flex items-center gap-2 cursor-pointer group select-none lg:order-none"
             >
-              <div className="w-10 h-10 rounded-xl bg-teal-700 flex items-center justify-center text-white shadow-xs group-hover:bg-teal-800 transition-colors">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-teal-700 flex items-center justify-center text-white shadow-xs group-hover:bg-teal-800 transition-colors">
                 <Activity className="w-5 h-5" />
               </div>
-              <h1 className="font-bold text-base sm:text-lg text-stone-900 group-hover:text-teal-800 transition-colors">
+              <h1 className="font-bold text-sm sm:text-lg text-stone-900 group-hover:text-teal-800 transition-colors">
                 عيادة دكتور أحمد
               </h1>
             </div>
 
             {/* Navigation Tabs */}
-            <nav className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+            <nav className="order-3 min-w-0 flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200 lg:order-none">
               <button
                 onClick={() => {
                   onNavigate('records');
                   onGoHome();
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`min-h-10 flex-1 justify-center flex items-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-lg text-xs whitespace-nowrap lg:min-h-0 font-bold transition-all cursor-pointer ${
                   currentView === 'records'
                     ? 'bg-white text-teal-900 shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                <FolderOpen className="w-3.5 h-3.5" />
+                <FolderOpen className="hidden min-[400px]:block shrink-0 w-3.5 h-3.5" />
                 <span>السجلات</span>
               </button>
 
               <button
                 onClick={() => onNavigate('stats')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`min-h-10 flex-1 justify-center flex items-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-lg text-xs whitespace-nowrap lg:min-h-0 font-bold transition-all cursor-pointer ${
                   currentView === 'stats'
                     ? 'bg-white text-teal-900 shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                <BarChart3 className="w-3.5 h-3.5 text-teal-700" />
+                <BarChart3 className="hidden min-[400px]:block shrink-0 w-3.5 h-3.5 text-teal-700" />
                 <span>الإحصائيات</span>
               </button>
             </nav>
           </div>
 
           {/* Right Section: Direct Role Switcher (Doctor vs Assistant) */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="contents lg:flex lg:items-center lg:gap-3">
             {/* Live Queue Indicator */}
             <div
               onClick={() => {
                 onNavigate('records');
                 onGoHome();
               }}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-medium cursor-pointer transition-colors ${
+              className={`order-2 lg:order-none justify-self-end whitespace-nowrap flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-medium cursor-pointer transition-colors ${
                 queueCount > 0
                   ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
                   : 'bg-stone-50 text-stone-600 border-stone-200'
@@ -119,20 +119,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Direct Role Switcher (Doctor vs Assistant) */}
-            <div className="bg-stone-100 p-1 rounded-xl border border-stone-200 flex items-center gap-1">
+            <div className="order-4 min-w-0 bg-stone-100 p-1 rounded-xl border border-stone-200 flex items-center gap-1 lg:order-none">
               <button
                 type="button"
                 onClick={() => {
                   switchRole('secretary');
                   onGoHome();
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`min-h-10 flex-1 justify-center flex items-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-lg text-xs whitespace-nowrap lg:min-h-0 font-bold transition-all cursor-pointer ${
                   !isDoctor
                     ? 'bg-sky-600 text-white shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                <ClipboardList className="w-3.5 h-3.5" />
+                <ClipboardList className="hidden min-[400px]:block shrink-0 w-3.5 h-3.5" />
                 <span>المساعدة</span>
               </button>
 
@@ -142,13 +142,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   switchRole('doctor');
                   onGoHome();
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`min-h-10 flex-1 justify-center flex items-center gap-1 px-1.5 sm:px-3 py-1.5 rounded-lg text-xs whitespace-nowrap lg:min-h-0 font-bold transition-all cursor-pointer ${
                   isDoctor
                     ? 'bg-emerald-700 text-white shadow-xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >
-                <Stethoscope className="w-3.5 h-3.5" />
+                <Stethoscope className="hidden min-[400px]:block shrink-0 w-3.5 h-3.5" />
                 <span>الدكتور</span>
               </button>
             </div>

@@ -117,7 +117,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-3xl w-full shadow-2xl border border-stone-300 overflow-hidden my-4 max-h-[95vh] flex flex-col">
+      <div className="bg-white rounded-xl max-w-3xl w-full shadow-2xl border border-stone-300 overflow-hidden max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] flex flex-col">
         {/* Top Control Bar */}
         <div className="bg-stone-100 border-b border-stone-300 px-4 py-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -132,6 +132,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="إغلاق استمارة المريض"
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -139,7 +140,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
         </div>
 
         {/* Scrollable Paper Container (Styled exactly like the paper photo with double border) */}
-        <div className="p-3 sm:p-6 overflow-y-auto flex-1 bg-stone-50">
+        <div className="p-3 sm:p-6 min-h-0 overflow-y-auto overscroll-contain flex-1 bg-stone-50">
           {errorMsg && (
             <div className="mb-4 flex items-center gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 shrink-0" />

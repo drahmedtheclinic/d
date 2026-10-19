@@ -16,7 +16,7 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-3 sm:right-auto sm:left-4 z-50 flex flex-col gap-2 sm:max-w-sm pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
@@ -28,15 +28,16 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
               : 'bg-stone-900/90 text-stone-100 border-stone-700/80'
           }`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="min-w-0 flex items-center gap-2.5">
             {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
             {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
             {toast.type === 'info' && <Info className="w-5 h-5 text-sky-400 shrink-0" />}
-            <span>{toast.message}</span>
+            <span className="break-words min-w-0" role="status">{toast.message}</span>
           </div>
           <button
             onClick={() => onDismiss(toast.id)}
-            className="p-1 hover:bg-white/10 rounded-lg text-stone-300 hover:text-white transition-colors mr-2"
+            aria-label="إغلاق التنبيه"
+            className="shrink-0 p-1 hover:bg-white/10 rounded-lg text-stone-300 hover:text-white transition-colors mr-2"
           >
             <X className="w-4 h-4" />
           </button>

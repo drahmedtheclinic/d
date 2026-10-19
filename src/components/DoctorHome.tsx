@@ -186,10 +186,10 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
 
       {/* Main Tabs (Queue vs Archive) when not searching */}
       {searchResults === null && (
-        <div className="flex border-b border-stone-200">
+        <div className="flex overflow-x-auto border-b border-stone-200">
           <button
             onClick={() => setActiveTab('queue')}
-            className={`flex items-center gap-2 py-2.5 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`shrink-0 flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
               activeTab === 'queue'
                 ? 'border-emerald-600 text-emerald-800 bg-white'
                 : 'border-transparent text-stone-500 hover:text-stone-700'
@@ -205,7 +205,7 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('archive')}
-            className={`flex items-center gap-2 py-2.5 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`shrink-0 flex items-center gap-2 py-2.5 px-3 sm:px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
               activeTab === 'archive'
                 ? 'border-emerald-600 text-emerald-800 bg-white'
                 : 'border-transparent text-stone-500 hover:text-stone-700'
@@ -234,14 +234,14 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                 <div
                   key={p.id}
                   onClick={() => onOpenPatient(p.id)}
-                  className="p-3.5 hover:bg-stone-50 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                  className="p-3.5 hover:bg-stone-50 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
+                  <div className="flex items-center gap-3 min-w-0 max-w-full">
+                    <span className="shrink-0 font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
                       #{p.code}
                     </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-stone-900 group-hover:text-emerald-800 transition-colors">
+                    <div className="min-w-0 break-words">
+                      <h4 className="break-words min-w-0 font-bold text-sm text-stone-900 group-hover:text-emerald-800 transition-colors">
                         {p.name}
                       </h4>
                       <p className="text-xs text-stone-500">
@@ -250,7 +250,7 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
                     {p.status === 'sent_to_doctor' && (
                       <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
                         في الانتظار
@@ -296,7 +296,7 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                   className="bg-white rounded-xl border-2 border-amber-300 hover:border-emerald-600 p-4 shadow-xs transition-all cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-wrap gap-2 items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
                         <span className="font-mono font-black text-xs bg-stone-900 text-white px-2 py-0.5 rounded">
                           #{patient.code}
@@ -314,11 +314,11 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                       </div>
                     </div>
 
-                    <h4 className="text-base font-bold text-stone-900 group-hover:text-emerald-800 transition-colors">
+                    <h4 className="break-words text-base font-bold text-stone-900 group-hover:text-emerald-800 transition-colors">
                       {patient.name}
                     </h4>
 
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-stone-500">
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-stone-500">
                       <span>السن: {patient.age || '—'}</span>
                       <span>•</span>
                       <span className="font-mono">{patient.phone}</span>
@@ -378,14 +378,14 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                 <div
                   key={p.id}
                   onClick={() => onOpenPatient(p.id)}
-                  className="p-3.5 hover:bg-stone-50 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                  className="p-3.5 hover:bg-stone-50 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
+                  <div className="flex items-center gap-3 min-w-0 max-w-full">
+                    <span className="shrink-0 font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
                       #{p.code}
                     </span>
-                    <div>
-                      <h4 className="font-bold text-sm text-stone-900 group-hover:text-emerald-800 transition-colors">
+                    <div className="min-w-0 break-words">
+                      <h4 className="break-words min-w-0 font-bold text-sm text-stone-900 group-hover:text-emerald-800 transition-colors">
                         {p.name}
                       </h4>
                       <p className="text-xs text-stone-500">
@@ -394,7 +394,7 @@ export const DoctorHome: React.FC<DoctorHomeProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 self-end sm:self-center">
                     {p.status === 'sent_to_doctor' && (
                       <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">
                         في الانتظار
