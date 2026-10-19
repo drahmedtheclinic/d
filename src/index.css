@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-arabic);
+    direction: rtl;
+    text-align: right;
+  }
+}
+
+/* Lined medical paper background effect */
+.ruled-lines {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    #e2e8f0 31px,
+    #e2e8f0 32px
+  );
+  line-height: 32px;
+}
+
+/* Print styles for prescription / file export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .paper-card {
+    border: 1px solid #1f2937 !important;
+    box-shadow: none !important;
+  }
+}

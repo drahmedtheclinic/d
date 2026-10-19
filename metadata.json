@@ -1,0 +1,6 @@
+{
+  "name": "Clinic Patient Records",
+  "description": "نظام إدارة وسجلات المرضى للعيادة الطبية بواجهة عربية متكاملة وسجلات تشبه الاستمارة الورقية",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

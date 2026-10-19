@@ -1,0 +1,199 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role assignment for clinic staff",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full staff member name",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "description": "Staff role within the clinic",
+          "enum": ["secretary", "doctor"]
+        },
+        "email": {
+          "type": "string",
+          "description": "User login email",
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Registration timestamp"
+        }
+      },
+      "required": ["name", "role"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "Medical clinic patient record resembling a paper medical chart",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "number",
+          "description": "Unique auto-generated sequential patient chart number"
+        },
+        "name": {
+          "type": "string",
+          "description": "Patient full name in Arabic",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "name_lower": {
+          "type": "string",
+          "description": "Normalized lowercase name for search indexing",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "age": {
+          "type": "string",
+          "description": "Age of patient (e.g., 34 or 8 أشهر)",
+          "maxLength": 30
+        },
+        "address": {
+          "type": "string",
+          "description": "Patient home address or city",
+          "maxLength": 200
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "co": {
+          "type": "string",
+          "description": "C/O Complaint of - شكوى المريض والأعراض",
+          "maxLength": 3000
+        },
+        "oe": {
+          "type": "string",
+          "description": "O/E On Examination - نتائج الفحص السريري",
+          "maxLength": 3000
+        },
+        "investigation": {
+          "type": "string",
+          "description": "Investigation - الفحوصات والتحاليل المعملية والإشاعات",
+          "maxLength": 3000
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "Diagnosis - التشخيص الطبي",
+          "maxLength": 2000
+        },
+        "rx": {
+          "type": "string",
+          "description": "R/ Prescription - الأدوية والروشتة الطبية والجرعات",
+          "maxLength": 4000
+        },
+        "status": {
+          "type": "string",
+          "description": "Current patient status in clinic workflow",
+          "enum": ["with_secretary", "sent_to_doctor", "seen"]
+        },
+        "sentToDoctorAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when patient was sent to queue for doctor"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who registered the patient",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "UID of the user who last modified the patient",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["code", "name", "name_lower", "phone", "status", "createdBy"]
+    },
+    "Followup": {
+      "title": "Followup",
+      "description": "Follow-up visit record attached to a patient",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Visit date",
+          "maxLength": 30
+        },
+        "notes": {
+          "type": "string",
+          "description": "Doctor or secretary visit notes on lined paper",
+          "maxLength": 5000
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the followup visit",
+          "enum": ["sent_to_doctor", "seen"]
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of author",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of followup entry"
+        }
+      },
+      "required": ["date", "notes", "status", "createdBy"]
+    },
+    "Counter": {
+      "title": "Counter",
+      "description": "Sequential counter document for generating unique patient codes",
+      "type": "object",
+      "properties": {
+        "current": {
+          "type": "number",
+          "description": "Current patient sequence number"
+        }
+      },
+      "required": ["current"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Staff profile records storing role and name"
+    },
+    "/patients/{patientId}": {
+      "schema": {
+        "$ref": "#/entities/Patient"
+      },
+      "description": "Clinical and demographic records for clinic patients"
+    },
+    "/patients/{patientId}/followups/{followupId}": {
+      "schema": {
+        "$ref": "#/entities/Followup"
+      },
+      "description": "Chronological patient follow-up visits"
+    },
+    "/counters/{counterId}": {
+      "schema": {
+        "$ref": "#/entities/Counter"
+      },
+      "description": "Atomic counters for sequential numbering like patient chart codes"
+    }
+  }
+}

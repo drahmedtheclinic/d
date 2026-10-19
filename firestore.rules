@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Clinic records accessible directly between secretary and doctor
+    match /patients/{patientId} {
+      allow read, write: if true;
+
+      match /followups/{followupId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /counters/{counterId} {
+      allow read, write: if true;
+    }
+
+    match /{path=**}/followups/{followupId} {
+      allow read, write: if true;
+    }
+
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+  }
+}
