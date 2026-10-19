@@ -22,10 +22,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
   }).format(new Date());
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-stone-300 overflow-hidden my-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-stone-300 overflow-hidden my-auto shrink-0 break-words">
         {/* Controls Bar (hidden during printing) */}
-        <div className="no-print bg-stone-100 border-b border-stone-200 p-3 sm:p-4 flex items-center justify-between">
+        <div className="no-print bg-stone-100 border-b border-stone-200 p-3 sm:p-4 flex flex-wrap gap-3 items-center justify-between">
           <span className="text-xs sm:text-sm font-bold text-stone-700">
             معاينة الروشتة الطبية للطباعة (Prescription R/)
           </span>
@@ -39,6 +39,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
             </button>
             <button
               onClick={onClose}
+              aria-label="إغلاق معاينة الروشتة"
               className="p-2 text-stone-500 hover:text-stone-800 rounded-lg hover:bg-stone-200 cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -47,10 +48,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
         </div>
 
         {/* The Printable Medical Prescription Sheet */}
-        <div className="p-8 sm:p-12 bg-white text-stone-900 border-8 border-stone-100 paper-card min-h-[500px] flex flex-col justify-between">
+        <div className="p-3 sm:p-12 print:p-12 bg-white text-stone-900 border-8 border-stone-100 paper-card min-h-[500px] flex flex-col justify-between">
           <div>
             {/* Clinic Letterhead */}
-            <div className="border-b-2 border-stone-800 pb-4 mb-6 flex items-start justify-between">
+            <div className="border-b-2 border-stone-800 pb-4 mb-6 flex flex-wrap gap-3 items-start justify-between">
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-teal-900">
                   عيادة دكتور أحمد
@@ -118,7 +119,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
           </div>
 
           {/* Footer Signature & Clinic address */}
-          <div className="border-t-2 border-stone-800 pt-6 mt-12 flex items-end justify-between text-xs text-stone-600">
+          <div className="border-t-2 border-stone-800 pt-6 mt-12 flex flex-col sm:flex-row print:flex-row gap-6 items-end justify-between text-xs text-stone-600">
             <div>
               <p className="font-bold text-stone-800">العنوان: 15 شارع النصر، المعادي، القاهرة</p>
               <p>للحجز والاستفسار: 01012345678 • مواعيد العيادة: يومياً 4 - 10 مساءً</p>

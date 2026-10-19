@@ -275,8 +275,8 @@ export const PatientPage: React.FC<PatientPageProps> = ({
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-6">
       {/* Top Floating Action Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-xl border border-stone-200 shadow-xs sticky top-20 z-20">
-        <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-xl border border-stone-200 shadow-xs lg:sticky lg:top-20 z-20">
+        <div className="flex items-center gap-2.5 min-w-0 max-w-full">
           <button
             onClick={onBack}
             className="flex items-center gap-1 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
@@ -294,7 +294,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
         </div>
 
         {/* Status Badge & Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto">
           {patient.status === 'sent_to_doctor' && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300">
               <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
@@ -345,7 +345,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
             title="طباعة الروشتة R/"
           >
             <Printer className="w-4 h-4 text-stone-600" />
-            <span className="hidden sm:inline">طباعة الروشتة</span>
+            <span>طباعة الروشتة</span>
           </button>
 
           {/* Save Button */}
@@ -528,7 +528,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
           </div>
         </div>
 
-        <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-stone-500">
+        <div className="pt-3 border-t border-stone-200 flex flex-wrap gap-3 items-center justify-between text-xs text-stone-500">
           <span>{patient.updatedByName ? `آخر تحديث بواسطة: ${patient.updatedByName}` : ''}</span>
           <button
             type="button"
@@ -546,8 +546,8 @@ export const PatientPage: React.FC<PatientPageProps> = ({
       {/* ============================================================== */}
       <div className="bg-white p-4 sm:p-8 border-4 border-double border-stone-800 shadow-md text-stone-900 space-y-4">
         {/* Centered Title as shown in Photo 1 */}
-        <div className="border-b-2 border-stone-800 pb-3 flex items-center justify-between">
-          <div className="flex-1 text-center">
+        <div className="border-b-2 border-stone-800 pb-3 flex flex-wrap gap-3 items-center justify-between">
+          <div className="min-w-0 sm:flex-1 text-center">
             <h2 className="text-xl sm:text-2xl font-serif font-black tracking-wide text-stone-900">
               Follow - up Visits
             </h2>
@@ -604,7 +604,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-1">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setShowAddFollowup(false)}
@@ -637,7 +637,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                 key={item.id}
                 className="border border-stone-300 rounded-xl bg-white overflow-hidden shadow-2xs"
               >
-                <div className="bg-stone-100 px-3 py-1.5 border-b border-stone-200 flex items-center justify-between text-xs">
+                <div className="bg-stone-100 px-3 py-1.5 border-b border-stone-200 flex flex-wrap gap-2 items-center justify-between text-xs">
                   <span className="font-bold font-mono text-stone-800">
                     التاريخ: {item.date}
                   </span>
@@ -652,7 +652,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
                     </span>
                   </div>
                 </div>
-                <div className="p-3.5 ruled-lines text-sm text-stone-900 whitespace-pre-line leading-relaxed">
+                <div className="break-words p-3.5 ruled-lines text-sm text-stone-900 whitespace-pre-line leading-relaxed">
                   {item.notes}
                 </div>
               </div>
