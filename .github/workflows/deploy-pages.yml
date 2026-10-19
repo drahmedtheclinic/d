@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [arena/eaab5dad-doc]
+    branches: [main, arena/eaab5dad-doc]
   workflow_dispatch:
 
 permissions:
