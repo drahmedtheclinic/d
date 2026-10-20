@@ -161,7 +161,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-stone-900">
-            سجلات واستقبال المرضى
+            سجلات المرضى
           </h2>
           <span className="text-xs text-stone-500">
             المساعدة: {userProfile?.name}
@@ -170,7 +170,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
 
         <button
           onClick={() => setIsNewPatientModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+          className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           <span>مريض جديد (+ استمارة)</span>
@@ -292,14 +292,14 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                 className="p-3.5 sm:p-4 hover:bg-stone-50 transition-colors cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
               >
                 {/* Patient Primary Details */}
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
+                <div className="flex items-center gap-3 min-w-0 max-w-full">
+                  <span className="shrink-0 font-mono font-bold text-xs bg-stone-100 border border-stone-300 text-stone-800 px-2.5 py-1 rounded">
                     #{p.code}
                   </span>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-sm text-stone-900 group-hover:text-teal-800 transition-colors">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="break-words min-w-0 font-bold text-sm text-stone-900 group-hover:text-teal-800 transition-colors">
                         {p.name}
                       </h4>
                       {p.age && (
@@ -309,7 +309,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 mt-0.5 text-xs text-stone-500">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs text-stone-500">
                       <span className="flex items-center gap-1 font-mono">
                         <Phone className="w-3 h-3 text-stone-400" />
                         {p.phone}
@@ -324,7 +324,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                 </div>
 
                 {/* Status & Actions */}
-                <div className="flex items-center gap-2 self-end sm:self-center flex-wrap justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto self-end sm:self-center">
                   {p.status === 'sent_to_doctor' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">
                       <Clock className="w-3 h-3 text-amber-600" />

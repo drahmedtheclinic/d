@@ -6,6 +6,10 @@
     --font-mono: 'JetBrains Mono', monospace;
   }
 
+  html {
+    scroll-padding-top: 9rem;
+  }
+
   body {
     font-family: var(--font-arabic);
     direction: rtl;
@@ -39,5 +43,28 @@
   .paper-card {
     border: 1px solid #1f2937 !important;
     box-shadow: none !important;
+  }
+}
+
+/* Let flex/grid fields shrink instead of pushing Arabic forms off-screen. */
+@layer base {
+  input, textarea, select {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+@media screen and (max-width: 639px) {
+  /* 16px prevents Safari from zooming the page when a field is focused. */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  button {
+    min-height: 44px;
   }
 }

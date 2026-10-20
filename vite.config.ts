@@ -5,6 +5,9 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // Required so built asset URLs resolve correctly when served from
+    // https://<user>.github.io/doc/ (GitHub Pages project site).
+    base: process.env.GITHUB_PAGES === 'true' ? '/doc/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

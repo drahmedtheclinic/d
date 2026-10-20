@@ -155,7 +155,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
       {/* METRIC CARDS ROW */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Patients */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
             <Users className="w-6 h-6" />
           </div>
@@ -169,7 +169,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
         </div>
 
         {/* New Cases */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0">
             <UserPlus className="w-6 h-6" />
           </div>
@@ -185,7 +185,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
         </div>
 
         {/* Follow-up Reviews */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
             <History className="w-6 h-6" />
           </div>
@@ -201,7 +201,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
         </div>
 
         {/* Current Waiting Queue */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex items-center gap-3.5">
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
             <Clock className="w-6 h-6" />
           </div>
@@ -220,7 +220,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
       {/* CHARTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* CHART 1: Daily or Weekly Patient Registrations (2 Cols) */}
-        <div className="lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-2 min-w-0 bg-white p-3 sm:p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
               <div>
@@ -308,14 +308,14 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
             </div>
           </div>
 
-          <div className="border-t border-stone-100 pt-3 mt-2 flex items-center justify-between text-xs text-stone-500">
+          <div className="border-t border-stone-100 pt-3 mt-2 flex flex-wrap gap-2 items-center justify-between text-xs text-stone-500">
             <span>اللون الأخضر: حالات كشف جديدة</span>
             <span>اللون البرتقالي: مراجعات ومتابعات</span>
           </div>
         </div>
 
         {/* CHART 2: Case Classification (New Cases vs Reviews/Followups) */}
-        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between">
+        <div className="min-w-0 bg-white p-3 sm:p-6 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -432,7 +432,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ onBack, showToast }) => {
       </div>
 
       {/* BOTTOM SECTION: Clinic Workflow Stage Breakdown */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
+      <div className="min-w-0 bg-white p-3 sm:p-6 rounded-2xl border border-stone-200 shadow-xs">
         <h3 className="font-bold text-stone-900 text-base mb-4 flex items-center gap-2">
           <Activity className="w-4 h-4 text-teal-700" />
           <span>مراحل الكشف</span>

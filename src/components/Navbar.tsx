@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import clinicImage from '../assets/clinic-image.jpg';
 import {
   Stethoscope,
   ClipboardList,
-  Activity,
   BarChart3,
   FolderOpen,
   Edit2,
   Check,
+  Menu,
+  X,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -27,164 +29,162 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { activeRole, switchRole, userProfile, updateStaffName } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userProfile.name);
-
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isDoctor = activeRole === 'doctor';
 
+  const goHome = () => {
+    onNavigate('records');
+    onGoHome();
+    setIsMenuOpen(false);
+  };
+
   const handleSaveName = () => {
-    if (tempName.trim()) {
-      updateStaffName(tempName.trim());
-    }
+    if (tempName.trim()) updateStaffName(tempName.trim());
     setIsEditingName(false);
   };
 
+  const tabClass = 'min-w-0 min-h-11 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer';
+
   return (
     <header className="bg-white border-b border-stone-200 sticky top-0 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2">
-          {/* Logo & Clinic Branding */}
-          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-            <div
-              onClick={() => {
-                onNavigate('records');
-                onGoHome();
-              }}
-              className="flex items-center gap-2.5 cursor-pointer group select-none"
+      <div className="max-w-7xl mx-auto w-full min-w-0 px-3 sm:px-6 lg:px-8">
+        <div className="min-w-0 xl:flex xl:items-center xl:gap-4">
+          {/* A compact, bounded row on phones; navigation lives in the menu. */}
+          <div className="flex min-w-0 flex-1 items-center gap-2 py-2">
+            <button
+              type="button"
+              onClick={goHome}
+              className="min-w-0 flex flex-1 items-center text-right group cursor-pointer"
+              aria-label="د. أحمد عوض - الرئيسية"
             >
-              <div className="w-10 h-10 rounded-xl bg-teal-700 flex items-center justify-center text-white shadow-xs group-hover:bg-teal-800 transition-colors">
-                <Activity className="w-5 h-5" />
-              </div>
-              <h1 className="font-bold text-base sm:text-lg text-stone-900 group-hover:text-teal-800 transition-colors">
-                عيادة دكتور أحمد
-              </h1>
-            </div>
+              <img
+                src={clinicImage}
+                alt="د. أحمد عوض"
+                className="h-[68px] sm:h-20 w-auto shrink-0 rounded-xl object-contain border border-stone-200 bg-white shadow-xs group-hover:border-teal-600 transition-colors"
+              />
+            </button>
 
-            {/* Navigation Tabs */}
-            <nav className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
-              <button
-                onClick={() => {
-                  onNavigate('records');
-                  onGoHome();
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  currentView === 'records'
-                    ? 'bg-white text-teal-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                <FolderOpen className="w-3.5 h-3.5" />
-                <span>السجلات</span>
-              </button>
-
-              <button
-                onClick={() => onNavigate('stats')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  currentView === 'stats'
-                    ? 'bg-white text-teal-900 shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-teal-700" />
-                <span>الإحصائيات</span>
-              </button>
-            </nav>
-          </div>
-
-          {/* Right Section: Direct Role Switcher (Doctor vs Assistant) */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Live Queue Indicator */}
-            <div
-              onClick={() => {
-                onNavigate('records');
-                onGoHome();
-              }}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-medium cursor-pointer transition-colors ${
+            <button
+              type="button"
+              onClick={goHome}
+              aria-label={`طابور الانتظار: ${queueCount}`}
+              className={`min-w-0 max-w-24 sm:max-w-36 shrink-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border text-xs font-medium cursor-pointer ${
                 queueCount > 0
                   ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
                   : 'bg-stone-50 text-stone-600 border-stone-200'
               }`}
-              title="طابور الانتظار"
             >
-              <span className="relative flex h-2.5 w-2.5">
-                {queueCount > 0 && (
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                )}
-                <span
-                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                    queueCount > 0 ? 'bg-amber-600' : 'bg-stone-400'
-                  }`}
-                ></span>
-              </span>
-              <span>الانتظار:</span>
-              <span className="font-bold font-mono text-stone-900">{queueCount}</span>
-            </div>
+              <span className={`shrink-0 rounded-full h-2 w-2 ${queueCount > 0 ? 'bg-amber-600' : 'bg-stone-400'}`} />
+              <span className="hidden sm:inline">الانتظار:</span>
+              <span className="min-w-0 truncate font-bold font-mono" dir="ltr">{queueCount}</span>
+            </button>
 
-            {/* Direct Role Switcher (Doctor vs Assistant) */}
-            <div className="bg-stone-100 p-1 rounded-xl border border-stone-200 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((open) => !open)}
+              aria-label={isMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+              aria-expanded={isMenuOpen}
+              aria-controls="clinic-navigation"
+              className="xl:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-700 cursor-pointer"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+          <div
+            id="clinic-navigation"
+            className={`${isMenuOpen ? 'flex' : 'hidden'} min-w-0 flex-col gap-2 pb-3 xl:flex xl:flex-row xl:items-center xl:pb-0`}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setIsMenuOpen(false);
+                document.querySelector<HTMLButtonElement>('[aria-controls="clinic-navigation"]')?.focus();
+              }
+            }}
+          >
+            <nav aria-label="التنقل الرئيسي" className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+              <button
+                type="button"
+                onClick={goHome}
+                aria-current={currentView === 'records' ? 'page' : undefined}
+                className={`${tabClass} ${currentView === 'records' ? 'bg-white text-teal-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
+              >
+                <FolderOpen className="shrink-0 w-4 h-4" />
+                <span className="min-w-0 break-words">السجلات</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate('stats');
+                  setIsMenuOpen(false);
+                }}
+                aria-current={currentView === 'stats' ? 'page' : undefined}
+                className={`${tabClass} ${currentView === 'stats' ? 'bg-white text-teal-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
+              >
+                <BarChart3 className="shrink-0 w-4 h-4" />
+                <span className="min-w-0 break-words">الإحصائيات</span>
+              </button>
+            </nav>
+
+            <div role="group" aria-label="اختيار الدور" className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
               <button
                 type="button"
                 onClick={() => {
                   switchRole('secretary');
-                  onGoHome();
+                  goHome();
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  !isDoctor
-                    ? 'bg-sky-600 text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                aria-pressed={!isDoctor}
+                className={`${tabClass} ${!isDoctor ? 'bg-sky-600 text-white shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
-                <ClipboardList className="w-3.5 h-3.5" />
-                <span>المساعدة</span>
+                <ClipboardList className="shrink-0 w-4 h-4" />
+                <span className="min-w-0 break-words">المساعدة</span>
               </button>
-
               <button
                 type="button"
                 onClick={() => {
                   switchRole('doctor');
-                  onGoHome();
+                  goHome();
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  isDoctor
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                aria-pressed={isDoctor}
+                className={`${tabClass} ${isDoctor ? 'bg-emerald-700 text-white shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
-                <Stethoscope className="w-3.5 h-3.5" />
-                <span>الدكتور</span>
+                <Stethoscope className="shrink-0 w-4 h-4" />
+                <span className="min-w-0 break-words">الدكتور</span>
               </button>
             </div>
 
-            {/* Staff Name Badge with optional edit */}
-            <div className="hidden lg:flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2.5 py-1.5 rounded-xl text-xs">
+            <div className="min-w-0 xl:w-36 flex items-center gap-1.5 bg-stone-50 border border-stone-200 px-2.5 py-1.5 rounded-xl text-xs">
               {isEditingName ? (
-                <div className="flex items-center gap-1">
+                <>
                   <input
                     type="text"
+                    aria-label="اسم الموظف"
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
-                    className="w-24 px-1.5 py-0.5 text-xs bg-white border border-stone-300 rounded font-bold text-stone-800 focus:outline-none"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') handleSaveName();
+                    }}
+                    className="min-w-0 w-full flex-1 px-1.5 py-1 bg-white border border-stone-300 rounded text-stone-800"
                     autoFocus
                   />
-                  <button
-                    onClick={handleSaveName}
-                    className="p-1 bg-teal-600 text-white rounded hover:bg-teal-700"
-                  >
-                    <Check className="w-3 h-3" />
+                  <button type="button" onClick={handleSaveName} aria-label="حفظ الاسم" className="shrink-0 w-9 flex items-center justify-center p-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                    <Check className="w-4 h-4" />
                   </button>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-stone-700">{userProfile.name}</span>
+                <>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-stone-700" title={userProfile.name}>{userProfile.name}</span>
                   <button
+                    type="button"
                     onClick={() => {
                       setTempName(userProfile.name);
                       setIsEditingName(true);
                     }}
-                    className="text-stone-400 hover:text-stone-600 p-0.5"
-                    title="تعديل الاسم"
+                    className="shrink-0 w-9 flex items-center justify-center text-stone-500 hover:text-stone-700 p-2"
+                    aria-label="تعديل الاسم"
                   >
-                    <Edit2 className="w-3 h-3" />
+                    <Edit2 className="w-4 h-4" />
                   </button>
-                </div>
+                </>
               )}
             </div>
           </div>
