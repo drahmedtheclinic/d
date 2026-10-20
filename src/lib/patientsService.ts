@@ -178,7 +178,8 @@ export async function createPatient(
 }
 
 /**
- * Updates patient demographics (Secretary or Doctor) in Realtime Database
+ * Updates patient demographics (Secretary or Doctor) in Realtime Database.
+ * Guards against assigning a file code that already belongs to another patient.
  */
 export async function updatePatientDemographics(
   patientId: string,
@@ -205,20 +206,56 @@ export async function updatePatientDemographics(
     updatedAt: Date.now(),
   };
 
+  let newCodeNum: number | null = null;
   if (data.code !== undefined && data.code !== null && String(data.code).trim() !== '') {
     const converted = convertArabicToEnglishDigits(String(data.code))
       .replace(/^#/, '')
       .trim();
     const num = Number(converted);
     if (!isNaN(num) && num > 0) {
+      newCodeNum = num;
       payload.code = num;
       payload.code_str = String(num);
     }
   }
 
   try {
+    // Prevent assigning a file code that belongs to another patient.
+    // Only checked when the code actually changes, so editing other fields
+    // (phone, address...) never fails because of a pre-existing legacy duplicate.
+    if (newCodeNum !== null) {
+      const currentSnap = await get(patientRef);
+      const currentCode = currentSnap.exists()
+        ? Number((currentSnap.val() as Patient).code)
+        : NaN;
+
+      if (currentCode !== newCodeNum) {
+        const existing = await getPatientByCode(newCodeNum);
+        if (existing && existing.id !== patientId) {
+          throw new Error(
+            `رقم الملف #${newCodeNum} مستخدم بالفعل للمريض: ${existing.name}. اختر رقمًا آخر`
+          );
+        }
+      }
+    }
+
     await update(patientRef, payload);
+
+    // Keep the auto counter ahead of any manually assigned code
+    if (newCodeNum !== null) {
+      try {
+        const counterRef = ref(rtdb, 'counters/patients/current');
+        await runTransaction(counterRef, (curr) => {
+          const currentNum = typeof curr === 'number' ? curr : 1000;
+          return newCodeNum! >= currentNum ? newCodeNum! : currentNum;
+        });
+      } catch (_) {}
+    }
   } catch (error) {
+    // Re-throw our own validation errors as-is (Arabic, user-facing)
+    if (error instanceof Error && error.message.startsWith('رقم الملف')) {
+      throw error;
+    }
     handleDatabaseError(error, OperationType.UPDATE, `patients/${patientId}`);
   }
 }
@@ -252,7 +289,7 @@ export async function updatePatientStatus(
 }
 
 /**
- * Updates clinical fields (Doctor only) in Realtime Database
+ * Updates clinical fields (Doctor or Secretary) in Realtime Database
  */
 export async function updatePatientClinical(
   patientId: string,
@@ -279,6 +316,74 @@ export async function updatePatientClinical(
     });
   } catch (error) {
     handleDatabaseError(error, OperationType.UPDATE, `patients/${patientId}`);
+  }
+}
+
+/**
+ * Permanently deletes a patient record and all of its follow-up visits
+ * from Realtime Database in a single atomic multi-path update.
+ * A minimal audit entry (who deleted which file, and when) is written to
+ * `auditLog/patientDeletions` in the same atomic operation so deletions
+ * stay traceable. The sequential code counter is intentionally NOT
+ * decremented, so a deleted patient's code is never reused automatically.
+ */
+export async function deletePatient(
+  patientId: string,
+  user: UserProfile
+): Promise<void> {
+  if (!patientId) {
+    throw new Error('معرّف المريض غير صالح');
+  }
+
+  try {
+    // Fetch the record first (for the audit entry + existence check)
+    const patientSnap = await get(ref(rtdb, `patients/${patientId}`));
+    if (!patientSnap.exists()) {
+      throw new Error('لم يتم العثور على ملف المريض (ربما حُذف بالفعل)');
+    }
+    const patientData = patientSnap.val() as Patient;
+
+    // Count follow-up visits that will be removed with the patient
+    let followupsCount = 0;
+    try {
+      const followupsSnap = await get(ref(rtdb, `followups/${patientId}`));
+      if (followupsSnap.exists()) {
+        const raw = followupsSnap.val();
+        followupsCount = raw && typeof raw === 'object' ? Object.keys(raw).length : 0;
+      }
+    } catch (_) {}
+
+    const auditKey = push(ref(rtdb, 'auditLog/patientDeletions')).key;
+
+    const updates: Record<string, any> = {
+      [`patients/${patientId}`]: null,
+      [`followups/${patientId}`]: null,
+    };
+
+    if (auditKey) {
+      updates[`auditLog/patientDeletions/${auditKey}`] = {
+        patientId,
+        code: patientData.code ?? null,
+        name: patientData.name ?? '',
+        followupsDeleted: followupsCount,
+        deletedBy: user.uid,
+        deletedByName: user.name,
+        deletedByRole: user.role,
+        deletedAt: Date.now(),
+      };
+    }
+
+    await update(ref(rtdb), updates);
+  } catch (error) {
+    // Re-throw our own validation errors as-is (Arabic, user-facing)
+    if (
+      error instanceof Error &&
+      (error.message.startsWith('معرّف المريض') ||
+        error.message.startsWith('لم يتم العثور'))
+    ) {
+      throw error;
+    }
+    handleDatabaseError(error, OperationType.DELETE, `patients/${patientId}`);
   }
 }
 

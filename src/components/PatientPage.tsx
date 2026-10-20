@@ -10,6 +10,7 @@ import {
   getPatientById,
 } from '../lib/patientsService';
 import { PrescriptionPrintModal } from './PrescriptionPrintModal';
+import { DeletePatientModal } from './DeletePatientModal';
 import {
   ArrowRight,
   Save,
@@ -24,6 +25,7 @@ import {
   Check,
   AlertCircle,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 
 interface PatientPageProps {
@@ -70,6 +72,9 @@ export const PatientPage: React.FC<PatientPageProps> = ({
 
   // Prescription Print Modal
   const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Delete Patient Modal (secretary only)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Fetch Patient
   const loadPatient = async () => {
@@ -143,20 +148,21 @@ export const PatientPage: React.FC<PatientPageProps> = ({
         userProfile
       );
 
-      // 2. If doctor, update clinical fields
-      if (isDoctor) {
-        await updatePatientClinical(
-          patientId,
-          { co, oe, investigation, diagnosis, rx },
-          userProfile
-        );
-      }
+      // 2. Update clinical fields (doctor and secretary can both edit the file)
+      await updatePatientClinical(
+        patientId,
+        { co, oe, investigation, diagnosis, rx },
+        userProfile
+      );
 
       showToast('تم حفظ الاستمارة الطبية بنجاح', 'success');
       await loadPatient();
     } catch (err: any) {
       console.error(err);
-      showToast('حدث خطأ أثناء حفظ الملف', 'error');
+      showToast(
+        err?.message?.startsWith('رقم الملف') ? err.message : 'حدث خطأ أثناء حفظ الملف',
+        'error'
+      );
     } finally {
       setSavingFile(false);
     }
@@ -171,6 +177,7 @@ export const PatientPage: React.FC<PatientPageProps> = ({
       await updatePatientDemographics(
         patientId,
         {
+          code: code.trim() || undefined,
           name: name.trim(),
           age: age.trim(),
           phone: phone.trim(),
@@ -660,6 +667,47 @@ export const PatientPage: React.FC<PatientPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* ============================================================== */}
+      {/* DANGER ZONE: DELETE PATIENT (SECRETARY ONLY) */}
+      {/* ============================================================== */}
+      {!isDoctor && (
+        <div className="bg-white rounded-xl border-2 border-rose-200 shadow-xs p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-sm text-rose-900 flex items-center gap-1.5">
+              <Trash2 className="w-4 h-4 text-rose-600" />
+              <span>حذف ملف المريض</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
+              حذف نهائي لهذا المريض وكل زيارات المتابعة الخاصة به من قاعدة
+              البيانات. استخدمه عند تسجيل ملف مكرر أو بالخطأ — لا يمكن التراجع
+              بعد الحذف.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>حذف هذا المريض نهائيًا</span>
+          </button>
+        </div>
+      )}
+
+      {/* Delete Patient Confirmation Modal (secretary only) */}
+      {showDeleteModal && (
+        <DeletePatientModal
+          patient={patient}
+          onClose={() => setShowDeleteModal(false)}
+          onDeleted={() => {
+            showToast(
+              `تم حذف ملف المريض #${patient.code} (${patient.name}) نهائيًا`,
+              'success'
+            );
+            onBack();
+          }}
+        />
+      )}
 
       {/* Prescription Print Modal */}
       {showPrintModal && (

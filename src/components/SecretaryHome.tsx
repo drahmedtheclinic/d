@@ -8,6 +8,8 @@ import {
   updatePatientStatus,
 } from '../lib/patientsService';
 import { PatientFormModal } from './PatientFormModal';
+import { EditPatientModal, EditedPatientData } from './EditPatientModal';
+import { DeletePatientModal } from './DeletePatientModal';
 import {
   Search,
   UserPlus,
@@ -18,6 +20,8 @@ import {
   Send,
   RefreshCw,
   FolderOpen,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 interface SecretaryHomeProps {
@@ -40,6 +44,10 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
 
   const [statusFilter, setStatusFilter] = useState<'all' | PatientStatus>('all');
   const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
+
+  // Edit / Delete patient (secretary)
+  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
   // Load recent patients
   const loadRecent = async () => {
@@ -113,6 +121,31 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       console.error(err);
       showToast('حدث خطأ أثناء إرسال المريض', 'error');
     }
+  };
+
+  // After editing a patient's data from the list
+  const handlePatientEdited = (patientId: string, updated: EditedPatientData) => {
+    const applyEdit = (list: Patient[]) =>
+      list.map((p) => (p.id === patientId ? { ...p, ...updated } : p));
+
+    setRecentPatients((prev) => applyEdit(prev));
+    setSearchResults((prev) => (prev ? applyEdit(prev) : null));
+    showToast(`تم حفظ تعديلات المريض #${updated.code} (${updated.name})`, 'success');
+  };
+
+  // After permanently deleting a patient from the list
+  const handlePatientDeleted = (patientId: string) => {
+    const deletedCode = patientToDelete?.code;
+    const deletedName = patientToDelete?.name;
+
+    setRecentPatients((prev) => prev.filter((p) => p.id !== patientId));
+    setSearchResults((prev) => (prev ? prev.filter((p) => p.id !== patientId) : null));
+    showToast(
+      deletedCode !== undefined
+        ? `تم حذف ملف المريض #${deletedCode} (${deletedName}) نهائيًا`
+        : 'تم حذف ملف المريض نهائيًا',
+      'success'
+    );
   };
 
   // Filtered patients for the main view
@@ -331,6 +364,32 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                     </button>
                   ) : null}
 
+                  {/* Edit patient data (secretary) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPatientToEdit(p);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-900 rounded text-xs font-bold border border-teal-300 cursor-pointer"
+                    title="تعديل بيانات المريض (الاسم، الهاتف، السن، العنوان، الرقم)"
+                  >
+                    <Pencil className="w-3 h-3 text-teal-700" />
+                    <span>تعديل</span>
+                  </button>
+
+                  {/* Delete patient record (secretary) */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPatientToDelete(p);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-900 rounded text-xs font-bold border border-rose-300 cursor-pointer"
+                    title="حذف ملف المريض نهائيًا"
+                  >
+                    <Trash2 className="w-3 h-3 text-rose-700" />
+                    <span>حذف</span>
+                  </button>
+
                   <button
                     onClick={() => onOpenPatient(p.id)}
                     className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded text-xs font-bold"
@@ -343,6 +402,26 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
           </div>
         )}
       </div>
+
+      {/* Edit Patient Modal (secretary) */}
+      {patientToEdit && (
+        <EditPatientModal
+          key={patientToEdit.id}
+          patient={patientToEdit}
+          onClose={() => setPatientToEdit(null)}
+          onSaved={handlePatientEdited}
+        />
+      )}
+
+      {/* Delete Patient Confirmation Modal (secretary) */}
+      {patientToDelete && (
+        <DeletePatientModal
+          key={patientToDelete.id}
+          patient={patientToDelete}
+          onClose={() => setPatientToDelete(null)}
+          onDeleted={handlePatientDeleted}
+        />
+      )}
 
       {/* Patient Form Modal */}
       <PatientFormModal
