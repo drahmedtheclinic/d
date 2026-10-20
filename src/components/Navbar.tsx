@@ -54,17 +54,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={goHome}
-              className="min-w-0 flex flex-1 items-center gap-2 text-right group cursor-pointer"
-              aria-label="عيادة دكتور أحمد - الرئيسية"
+              className="min-w-0 flex flex-1 items-center text-right group cursor-pointer"
+              aria-label="د. أحمد عوض - الرئيسية"
             >
               <img
                 src={clinicImage}
-                alt="عيادة دكتور أحمد"
-                className="h-12 w-[74px] sm:h-14 sm:w-[86px] shrink-0 rounded-xl object-cover border border-stone-200 bg-white shadow-xs group-hover:border-teal-600 transition-colors"
+                alt="د. أحمد عوض"
+                className="h-[68px] sm:h-20 w-auto shrink-0 rounded-xl object-contain border border-stone-200 bg-white shadow-xs group-hover:border-teal-600 transition-colors"
               />
-              <span className="min-w-0 truncate font-bold text-sm sm:text-base text-stone-900 group-hover:text-teal-800">
-                عيادة دكتور أحمد
-              </span>
             </button>
 
             <button

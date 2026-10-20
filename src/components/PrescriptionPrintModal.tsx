@@ -52,22 +52,14 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
         <div className="p-3 sm:p-12 print:p-12 bg-white text-stone-900 border-8 border-stone-100 paper-card min-h-[500px] flex flex-col justify-between">
           <div>
             {/* Clinic Letterhead */}
-            <div className="border-b-2 border-stone-800 pb-4 mb-6 flex flex-wrap gap-3 items-start justify-between">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-teal-900">
-                  عيادة دكتور أحمد
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-600 mt-1 font-semibold">
-                  د. أحمد • استشاري الباطنة
-                </p>
-              </div>
+            <div className="border-b-2 border-stone-800 pb-4 mb-6 flex flex-wrap gap-3 items-center justify-between">
+              <img
+                src={clinicImage}
+                alt="د. أحمد عوض"
+                className="h-20 sm:h-24 w-auto rounded-xl object-contain border border-stone-200 bg-white shadow-xs"
+              />
               <div className="text-left flex flex-col items-end">
-                <img
-                  src={clinicImage}
-                  alt="عيادة دكتور أحمد"
-                  className="h-16 w-[98px] rounded-xl object-cover border border-stone-200 bg-white shadow-xs mb-1"
-                />
-                <span className="text-xs font-mono font-bold text-stone-700">
+                <span className="text-xs font-mono font-bold text-stone-700 bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200">
                   كود الملف: #{patient.code}
                 </span>
               </div>
