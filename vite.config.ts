@@ -4,10 +4,10 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+
   return {
-    // Required so built asset URLs resolve correctly when served from
-    // https://<user>.github.io/doc/ (GitHub Pages project site).
-    base: process.env.GITHUB_PAGES === 'true' ? '/doc/' : '/',
+    base: process.env.GITHUB_PAGES === 'true' && repoName ? `/${repoName}/` : './',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -16,10 +16,7 @@ export default defineConfig(() => {
     },
     server: {
       allowedHosts: true as const,
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
