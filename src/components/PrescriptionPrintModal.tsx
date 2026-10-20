@@ -1,6 +1,7 @@
 import React from 'react';
 import { Patient } from '../types';
-import { X, Printer, Activity } from 'lucide-react';
+import clinicImage from '../assets/clinic-image.jpg';
+import { X, Printer } from 'lucide-react';
 
 interface PrescriptionPrintModalProps {
   patient: Patient | null;
@@ -61,9 +62,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
                 </p>
               </div>
               <div className="text-left flex flex-col items-end">
-                <div className="w-12 h-12 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-lg mb-1">
-                  <Activity className="w-7 h-7" />
-                </div>
+                <img
+                  src={clinicImage}
+                  alt="عيادة دكتور أحمد"
+                  className="h-16 w-[98px] rounded-xl object-cover border border-stone-200 bg-white shadow-xs mb-1"
+                />
                 <span className="text-xs font-mono font-bold text-stone-700">
                   كود الملف: #{patient.code}
                 </span>
