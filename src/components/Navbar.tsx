@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import clinicImage from '../assets/clinic-image.jpg';
 import {
   Stethoscope,
   ClipboardList,
-  Activity,
   BarChart3,
   FolderOpen,
   Edit2,
@@ -57,9 +57,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="min-w-0 flex flex-1 items-center gap-2 text-right group cursor-pointer"
               aria-label="عيادة دكتور أحمد - الرئيسية"
             >
-              <span className="w-9 h-9 shrink-0 rounded-xl bg-teal-700 flex items-center justify-center text-white group-hover:bg-teal-800">
-                <Activity className="w-5 h-5" />
-              </span>
+              <img
+                src={clinicImage}
+                alt="عيادة دكتور أحمد"
+                className="h-12 w-[74px] sm:h-14 sm:w-[86px] shrink-0 rounded-xl object-cover border border-stone-200 bg-white shadow-xs group-hover:border-teal-600 transition-colors"
+              />
               <span className="min-w-0 truncate font-bold text-sm sm:text-base text-stone-900 group-hover:text-teal-800">
                 عيادة دكتور أحمد
               </span>

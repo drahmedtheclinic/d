@@ -128,7 +128,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-stone-900">
-            سجلات واستقبال المرضى
+            سجلات المرضى
           </h2>
           <span className="text-xs text-stone-500">
             المساعدة: {userProfile?.name}
