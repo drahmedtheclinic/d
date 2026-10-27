@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { deletePatient, convertArabicToEnglishDigits } from '../lib/patientsService';
 import { Patient } from '../types';
@@ -15,6 +16,7 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
   onClose,
   onDeleted,
 }) => {
+  const { t, language } = useLanguage();
   const { userProfile } = useAuth();
 
   const [confirmCode, setConfirmCode] = useState('');
@@ -30,7 +32,7 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
   const typedCode = convertArabicToEnglishDigits(confirmCode).replace(/^#/, '').trim();
   const isConfirmed = expectedCode !== ''
     ? typedCode === expectedCode
-    : confirmCode.trim() === 'حذف';
+    : confirmCode.trim().toLowerCase() === (language === 'en' ? 'delete' : 'حذف');
 
   const handleDelete = async () => {
     if (!isConfirmed || !userProfile) return;
@@ -43,7 +45,7 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'حدث خطأ أثناء حذف ملف المريض');
+      setErrorMsg(err.message || t('حدث خطأ أثناء حذف ملف المريض'));
     } finally {
       setDeleting(false);
     }
@@ -65,14 +67,14 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
               <Trash2 className="w-4 h-4" />
             </div>
             <h3 className="font-bold text-sm sm:text-base text-rose-950">
-              حذف ملف المريض
+              {t("حذف ملف المريض")}
             </h3>
           </div>
           <button
             onClick={onClose}
             disabled={deleting}
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-            title="إغلاق"
+            title={t("إغلاق")}
           >
             <X className="w-5 h-5" />
           </button>
@@ -112,12 +114,12 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
           <div className="p-3.5 rounded-xl border-2 border-rose-300 bg-rose-50/60 text-rose-950 space-y-1.5">
             <p className="flex items-center gap-1.5 text-xs sm:text-sm font-black">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-              <span>حذف نهائي — لا يمكن التراجع عنه</span>
+              <span>{t("حذف نهائي — لا يمكن التراجع عنه")}</span>
             </p>
             <ul className="text-xs leading-relaxed list-disc pr-5 space-y-0.5">
-              <li>سيتم حذف الاستمارة الطبية بالكامل (التشخيص والروشتة وكل الحقول).</li>
-              <li>سيتم حذف جميع زيارات المتابعة الخاصة بهذا المريض أيضًا.</li>
-              <li>لن يظهر المريض بعد ذلك في البحث أو القوائم أو طابور الانتظار.</li>
+              <li>{t("سيتم حذف الاستمارة الطبية بالكامل (التشخيص والروشتة وكل الحقول).")}</li>
+              <li>{t("سيتم حذف جميع زيارات المتابعة الخاصة بهذا المريض أيضًا.")}</li>
+              <li>{t("لن يظهر المريض بعد ذلك في البحث أو القوائم أو طابور الانتظار.")}</li>
             </ul>
           </div>
 
@@ -126,22 +128,22 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
             <label className="block text-xs font-bold text-stone-800 mb-1.5">
               {expectedCode !== '' ? (
                 <>
-                  للتأكيد، اكتب رقم ملف المريض{' '}
+                  {language === 'en' ? 'To confirm, enter patient file number ' : 'للتأكيد، اكتب رقم ملف المريض '}
                   <span className="font-mono font-black text-rose-700">
                     {expectedCode}
                   </span>{' '}
-                  في الحقل التالي:
+                  {language === 'en' ? ' in the field below:' : ' في الحقل التالي:'}
                 </>
               ) : (
-                <>للتأكيد، اكتب كلمة «حذف» في الحقل التالي:</>
+                <>{language === 'en' ? 'To confirm, type “delete” in the field below:' : 'للتأكيد، اكتب كلمة «حذف» في الحقل التالي:'}</>
               )}
             </label>
             <input
               type="text"
               value={confirmCode}
               onChange={(e) => setConfirmCode(e.target.value)}
-              placeholder={expectedCode !== '' ? `مثال: ${expectedCode}` : 'حذف'}
-              dir={expectedCode !== '' ? 'ltr' : 'rtl'}
+              placeholder={expectedCode !== '' ? `${language === 'en' ? 'e.g.' : 'مثال:'} ${expectedCode}` : (language === 'en' ? 'delete' : 'حذف')}
+              dir={expectedCode !== '' || language === 'en' ? 'ltr' : 'rtl'}
               autoComplete="off"
               className={`w-full px-3 py-2.5 border-2 rounded-lg text-sm font-mono font-bold text-center focus:outline-none focus:bg-white ${
                 isConfirmed
@@ -151,7 +153,7 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
             />
             {confirmCode.trim() !== '' && !isConfirmed && (
               <p className="text-[11px] text-stone-500 mt-1">
-                الرقم المدخل غير مطابق لرقم ملف هذا المريض.
+                {t("الرقم المدخل غير مطابق لرقم ملف هذا المريض.")}
               </p>
             )}
           </div>
@@ -165,7 +167,7 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
             onClick={onClose}
             className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
           >
-            إلغاء
+            {t("إلغاء")}
           </button>
 
           <button
@@ -173,10 +175,10 @@ export const DeletePatientModal: React.FC<DeletePatientModalProps> = ({
             disabled={!isConfirmed || deleting}
             onClick={handleDelete}
             className="w-full sm:w-auto px-5 py-2.5 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            title={isConfirmed ? 'حذف المريض نهائيًا' : 'اكتب رقم الملف أولًا لتفعيل الحذف'}
+            title={isConfirmed ? t('حذف المريض نهائيًا') : t('اكتب رقم الملف أولًا لتفعيل الحذف')}
           >
             <Trash2 className="w-4 h-4" />
-            <span>{deleting ? 'جاري الحذف...' : 'حذف نهائيًا'}</span>
+            <span>{deleting ? t('جاري الحذف...') : t('حذف نهائيًا')}</span>
           </button>
         </div>
       </div>

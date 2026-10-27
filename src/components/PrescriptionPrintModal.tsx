@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Patient } from '../types';
 import clinicImage from '../assets/clinic-image.jpg';
 import { X, Printer } from 'lucide-react';
@@ -12,6 +13,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
   patient,
   onClose,
 }) => {
+  const { t } = useLanguage();
   if (!patient) return null;
 
   const handlePrint = () => {
@@ -28,7 +30,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
         {/* Controls Bar (hidden during printing) */}
         <div className="no-print bg-stone-100 border-b border-stone-200 p-3 sm:p-4 flex flex-wrap gap-3 items-center justify-between">
           <span className="text-xs sm:text-sm font-bold text-stone-700">
-            معاينة الروشتة الطبية للطباعة (Prescription R/)
+            {t("معاينة الروشتة الطبية للطباعة (Prescription R/)")}
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -36,11 +38,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
               className="flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>طباعة الروشتة الآن</span>
+              <span>{t("طباعة الروشتة الآن")}</span>
             </button>
             <button
               onClick={onClose}
-              aria-label="إغلاق معاينة الروشتة"
+              aria-label={t("إغلاق معاينة الروشتة")}
               className="p-2 text-stone-500 hover:text-stone-800 rounded-lg hover:bg-stone-200 cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -60,7 +62,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
               />
               <div className="text-left flex flex-col items-end">
                 <span className="text-xs font-mono font-bold text-stone-700 bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200">
-                  كود الملف: #{patient.code}
+                  {t('كود الملف:')} #{patient.code}
                 </span>
               </div>
             </div>
@@ -68,19 +70,19 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
             {/* Patient Demographic Line */}
             <div className="bg-stone-50 p-3.5 rounded-lg border border-stone-200 mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <span className="text-stone-500 block">اسم المريض:</span>
+                <span className="text-stone-500 block">{t("اسم المريض:")}</span>
                 <span className="font-bold text-sm text-stone-900">{patient.name}</span>
               </div>
               <div>
-                <span className="text-stone-500 block">السن:</span>
+                <span className="text-stone-500 block">{t("السن:")}</span>
                 <span className="font-bold text-sm text-stone-900">{patient.age || '—'}</span>
               </div>
               <div>
-                <span className="text-stone-500 block">التاريخ:</span>
+                <span className="text-stone-500 block">{t("التاريخ:")}</span>
                 <span className="font-bold text-stone-800">{todayArabic}</span>
               </div>
               <div>
-                <span className="text-stone-500 block">الهاتف:</span>
+                <span className="text-stone-500 block">{t("الهاتف:")}</span>
                 <span className="font-mono font-bold text-stone-800">{patient.phone}</span>
               </div>
             </div>
@@ -89,7 +91,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
             {patient.diagnosis && (
               <div className="mb-6 p-3 bg-teal-50/50 rounded-lg border border-teal-200">
                 <span className="text-xs font-bold text-teal-800 block mb-0.5">
-                  التشخيص الطبي (Diagnosis):
+                  {t("التشخيص الطبي (Diagnosis):")}
                 </span>
                 <p className="text-sm font-semibold text-stone-800">{patient.diagnosis}</p>
               </div>
@@ -106,7 +108,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
                   patient.rx
                 ) : (
                   <span className="text-stone-400 italic">
-                    لم يتم كتابة علاج أو روشتة حتى الآن في هذا الملف.
+                    {t("لم يتم كتابة علاج أو روشتة حتى الآن في هذا الملف.")}
                   </span>
                 )}
               </div>
@@ -116,11 +118,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
           {/* Footer Signature & Clinic address */}
           <div className="border-t-2 border-stone-800 pt-6 mt-12 flex flex-col sm:flex-row print:flex-row gap-6 items-end justify-between text-xs text-stone-600">
             <div>
-              <p className="font-bold text-stone-800">العنوان: 15 شارع النصر، المعادي، القاهرة</p>
-              <p>للحجز والاستفسار: 01012345678 • مواعيد العيادة: يومياً 4 - 10 مساءً</p>
+              <p className="font-bold text-stone-800">{t("العنوان: 15 شارع النصر، المعادي، القاهرة")}</p>
+              <p>{t("للحجز والاستفسار: 01012345678 • مواعيد العيادة: يومياً 4 - 10 مساءً")}</p>
             </div>
             <div className="text-center">
-              <span className="text-stone-400 block mb-8">توقيع وختم الطبيب المعالج</span>
+              <span className="text-stone-400 block mb-8">{t("توقيع وختم الطبيب المعالج")}</span>
               <div className="w-32 border-b border-stone-400"></div>
             </div>
           </div>

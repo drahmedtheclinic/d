@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { createPatient, getPatientByCode, convertArabicToEnglishDigits } from '../lib/patientsService';
-import { Patient, PatientStatus } from '../types';
-import { X, Send, Save, AlertCircle, FileText, Check, Search, ArrowLeft } from 'lucide-react';
+import { createPatient, getNextPatientCode } from '../lib/patientsService';
+import { PatientStatus } from '../types';
+import { X, Send, Save, AlertCircle, FileText, Check, Hash } from 'lucide-react';
 
 interface PatientFormModalProps {
   isOpen: boolean;
@@ -17,67 +18,68 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
   onPatientCreated,
   onOpenPatient,
 }) => {
+  const { t } = useLanguage();
   const { userProfile, activeRole } = useAuth();
   const isDoctor = activeRole === 'doctor';
 
-  // Patient Code (manual entry by assistant)
-  const [code, setCode] = useState('');
-  const [existingPatient, setExistingPatient] = useState<Patient | null>(null);
-  const [checkingCode, setCheckingCode] = useState(false);
 
   // Demographics (matching paper header)
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [code, setCode] = useState<number | null>(null);
 
   // Clinical fields (matching paper body)
   const [co, setCo] = useState('');
   const [oe, setOe] = useState('');
   const [investigation, setInvestigation] = useState('');
+  const [plan, setPlan] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [rx, setRx] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setCode(null);
+    getNextPatientCode()
+      .then((nextCode) => {
+        if (!cancelled) setCode(nextCode);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) setErrorMsg(t('تعذر إنشاء رقم ملف تلقائي. حاول مرة أخرى.'));
+      });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
-  const handleCodeChange = async (val: string) => {
-    setCode(val);
-    setExistingPatient(null);
-    const clean = convertArabicToEnglishDigits(val).replace(/^#/, '').trim();
-    if (clean && !isNaN(Number(clean))) {
-      setCheckingCode(true);
-      try {
-        const found = await getPatientByCode(clean);
-        setExistingPatient(found);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setCheckingCode(false);
-      }
-    }
-  };
+  if (!isOpen) return null;
 
   const handleSubmit = async (targetStatus: PatientStatus) => {
     setErrorMsg('');
 
     if (!name.trim()) {
-      setErrorMsg('اسم المريض مطلوب (الإسم /)');
+      setErrorMsg(t('اسم المريض مطلوب (الإسم /)'));
       return;
     }
     if (!phone.trim()) {
-      setErrorMsg('رقم الهاتف مطلوب (ت :)');
+      setErrorMsg(t('رقم الهاتف مطلوب (ت :)'));
       return;
     }
     if (!userProfile) return;
+    if (code === null) {
+      setErrorMsg(t('جاري إنشاء رقم الملف تلقائياً، حاول بعد لحظة.'));
+      return;
+    }
 
     setLoading(true);
     try {
       const patientId = await createPatient(
         {
-          code: code.trim() || undefined,
+          code,
           name: name.trim(),
           age: age.trim(),
           address: address.trim(),
@@ -85,6 +87,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
           co: co.trim(),
           oe: oe.trim(),
           investigation: investigation.trim(),
+          plan: plan.trim(),
           diagnosis: diagnosis.trim(),
           rx: rx.trim(),
           status: targetStatus,
@@ -93,8 +96,6 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
       );
 
       // Reset form
-      setCode('');
-      setExistingPatient(null);
       setName('');
       setAge('');
       setPhone('');
@@ -102,6 +103,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
       setCo('');
       setOe('');
       setInvestigation('');
+      setPlan('');
       setDiagnosis('');
       setRx('');
 
@@ -109,7 +111,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'حدث خطأ أثناء حفظ استمارة المريض');
+      setErrorMsg(t(err.message || 'حدث خطأ أثناء حفظ استمارة المريض'));
     } finally {
       setLoading(false);
     }
@@ -126,13 +128,13 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-stone-900">
-                استمارة مريض جديد
+                {t("استمارة مريض جديد")}
               </h3>
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="إغلاق استمارة المريض"
+            aria-label={t("إغلاق استمارة المريض")}
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -148,36 +150,6 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
             </div>
           )}
 
-          {/* Alert if Patient Code Already Exists (Revisit / إعادة) */}
-          {existingPatient && (
-            <div className="mb-4 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-                <div>
-                  <p className="text-xs sm:text-sm font-bold">
-                    هذا الرقم مسجل بالفعل للمريض: <span className="underline font-black text-amber-950">{existingPatient.name}</span>
-                  </p>
-                  <p className="text-xs text-amber-800 mt-0.5">
-                    الهاتف: {existingPatient.phone || 'غير مسجل'} • كشف سابق: {existingPatient.diagnosis || 'مسجل بالعيادة'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  if (onOpenPatient) {
-                    onOpenPatient(existingPatient.id);
-                  }
-                }}
-                className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-colors"
-              >
-                <span>فتح ملف المريض للإعادة</span>
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
           {/* Double Rectangular Border Paper Sheet (as seen in the photo) */}
           <div className="bg-white p-4 sm:p-7 border-4 border-double border-stone-800 shadow-sm text-stone-900 space-y-4">
             
@@ -187,34 +159,26 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
                 <div className="sm:col-span-2 flex items-center gap-2">
                   <label className="font-bold text-sm text-stone-900 shrink-0 font-serif">
-                    الإسم /
+                    {t("الإسم /")}
                   </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="اسم المريض ثلاثي أو رباعي..."
+                    placeholder={t("اسم المريض ثلاثي أو رباعي...")}
                     className="w-full px-2 py-1.5 border-b-2 border-stone-400 focus:border-stone-900 focus:outline-none text-sm font-semibold bg-stone-50/50"
                   />
                 </div>
 
                 <div className="flex items-center gap-2 sm:justify-end">
                   <label className="font-bold text-sm text-stone-900 shrink-0 font-serif">
-                    الرقم :
+                    {t("الرقم :")}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={code}
-                      onChange={(e) => handleCodeChange(e.target.value)}
-                      placeholder="رقم الملف..."
-                      className="w-28 px-2 py-1 border-2 border-teal-700 focus:border-teal-900 rounded font-mono font-bold text-sm text-center text-teal-950 bg-teal-50/60 focus:outline-none focus:bg-white"
-                      title="تدخله المساعدة (مثال: 101)"
-                    />
-                    {checkingCode && (
-                      <span className="absolute left-1.5 top-2 text-[10px] text-teal-600">...</span>
-                    )}
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-teal-200 rounded bg-teal-50 text-teal-900" title={t("يتم إنشاء رقم ملف فريد تلقائياً")}>
+                    <Hash className="w-3.5 h-3.5" />
+                    <span className="text-sm font-bold font-mono" dir="ltr">{code ?? '...'}</span>
+                    <span className="text-[10px] font-semibold">{t("تلقائي")}</span>
                   </div>
                 </div>
               </div>
@@ -224,13 +188,13 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 {/* السن : */}
                 <div className="sm:col-span-3 flex items-center gap-2">
                   <label className="font-bold text-sm text-stone-900 shrink-0 font-serif">
-                    السن :
+                    {t("السن :")}
                   </label>
                   <input
                     type="text"
                     value={age}
                     onChange={(e) => setAge(e.target.value)}
-                    placeholder="مثال: 34 سنة"
+                    placeholder={t("مثال: 34 سنة")}
                     className="w-full px-2 py-1 border-b-2 border-stone-400 focus:border-stone-900 focus:outline-none text-sm bg-stone-50/50"
                   />
                 </div>
@@ -238,13 +202,13 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 {/* العنوان : */}
                 <div className="sm:col-span-5 flex items-center gap-2">
                   <label className="font-bold text-sm text-stone-900 shrink-0 font-serif">
-                    العنوان :
+                    {t("العنوان :")}
                   </label>
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="المدينة / المنطقة..."
+                    placeholder={t("المدينة / المنطقة...")}
                     className="w-full px-2 py-1 border-b-2 border-stone-400 focus:border-stone-900 focus:outline-none text-sm bg-stone-50/50"
                   />
                 </div>
@@ -252,7 +216,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 {/* ت : */}
                 <div className="sm:col-span-4 flex items-center gap-2">
                   <label className="font-bold text-sm text-stone-900 shrink-0 font-serif">
-                    ت :
+                    {t("ت :")}
                   </label>
                   <input
                     type="tel"
@@ -278,7 +242,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   rows={3}
                   value={co}
                   onChange={(e) => setCo(e.target.value)}
-                  placeholder="شكوى المريض والأعراض (Complaint of)..."
+                  placeholder={t("شكوى المريض والأعراض (Complaint of)...")}
                   className="w-full p-2.5 text-sm text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
                 />
               </div>
@@ -292,7 +256,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   rows={3}
                   value={oe}
                   onChange={(e) => setOe(e.target.value)}
-                  placeholder="الفحص السريري والعلامات الحيوية (On Examination: BP, Pulse, Chest, Abdomen...)"
+                  placeholder={t("الفحص السريري والعلامات الحيوية (On Examination: BP, Pulse, Chest, Abdomen...)")}
                   className="w-full p-2.5 text-sm text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
                 />
               </div>
@@ -306,7 +270,21 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   rows={3}
                   value={investigation}
                   onChange={(e) => setInvestigation(e.target.value)}
-                  placeholder="التحاليل والفحوصات المطلوبة والنتائج..."
+                  placeholder={t("التحاليل والفحوصات المطلوبة والنتائج...")}
+                  className="w-full p-2.5 text-sm text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
+                />
+              </div>
+
+              {/* Plan */}
+              <div>
+                <label className="block text-sm font-black font-serif text-stone-900 mb-1">
+                  Plan
+                </label>
+                <textarea
+                  rows={3}
+                  value={plan}
+                  onChange={(e) => setPlan(e.target.value)}
+                  placeholder={t("الخطة العلاجية والخطوات القادمة...")}
                   className="w-full p-2.5 text-sm text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
                 />
               </div>
@@ -320,7 +298,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   rows={2}
                   value={diagnosis}
                   onChange={(e) => setDiagnosis(e.target.value)}
-                  placeholder="التشخيص الطبي للحالة..."
+                  placeholder={t("التشخيص الطبي للحالة...")}
                   className="w-full p-2.5 text-sm font-semibold text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
                 />
               </div>
@@ -334,7 +312,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   rows={4}
                   value={rx}
                   onChange={(e) => setRx(e.target.value)}
-                  placeholder="الروشتة والعلاج المقترح والجرعات..."
+                  placeholder={t("الروشتة والعلاج المقترح والجرعات...")}
                   className="w-full p-2.5 text-sm text-stone-900 border border-stone-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-stone-800 ruled-lines bg-white"
                 />
               </div>
@@ -350,7 +328,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
             onClick={onClose}
             className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200 rounded-xl transition-colors cursor-pointer"
           >
-            إلغاء
+            {t("إلغاء")}
           </button>
 
           <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2">
@@ -362,7 +340,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                 className="w-full sm:w-auto px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                <span>حفظ الكشف</span>
+                <span>{t("حفظ الكشف")}</span>
               </button>
             ) : (
               <>
@@ -373,7 +351,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   className="w-full sm:w-auto px-4 py-2.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
-                  <span>حفظ</span>
+                  <span>{t("حفظ")}</span>
                 </button>
                 <button
                   type="button"
@@ -382,7 +360,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                   className="w-full sm:w-auto px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
-                  <span>حفظ وإرسال للدكتور</span>
+                  <span>{t("حفظ وإرسال للدكتور")}</span>
                 </button>
               </>
             )}

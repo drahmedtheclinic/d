@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export interface ToastMessage {
@@ -13,6 +14,7 @@ interface ToastProps {
 }
 
 export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
+  const { t } = useLanguage();
   if (toasts.length === 0) return null;
 
   return (
@@ -36,7 +38,7 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
           </div>
           <button
             onClick={() => onDismiss(toast.id)}
-            aria-label="إغلاق التنبيه"
+            aria-label={t("إغلاق التنبيه")}
             className="shrink-0 p-1 hover:bg-white/10 rounded-lg text-stone-300 hover:text-white transition-colors mr-2"
           >
             <X className="w-4 h-4" />

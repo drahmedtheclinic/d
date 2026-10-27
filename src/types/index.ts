@@ -22,6 +22,7 @@ export interface Patient {
   co: string; // C/O - Complaint of
   oe: string; // O/E - On Examination
   investigation: string; // Investigation
+  plan: string; // Treatment / management plan
   diagnosis: string; // Diagnosis
   rx: string; // R/ - Prescription & Treatment
   status: PatientStatus;

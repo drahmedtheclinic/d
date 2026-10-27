@@ -106,6 +106,7 @@ export async function createPatient(
     co?: string;
     oe?: string;
     investigation?: string;
+    plan?: string;
     diagnosis?: string;
     rx?: string;
   },
@@ -133,16 +134,29 @@ export async function createPatient(
 
     if (!cleanCodeNum) {
       cleanCodeNum = await getNextPatientCode();
-    } else {
-      // Keep counter ahead of any manually entered code
-      try {
-        const counterRef = ref(rtdb, 'counters/patients/current');
-        await runTransaction(counterRef, (curr) => {
-          const currentNum = typeof curr === 'number' ? curr : 1000;
-          return cleanCodeNum! >= currentNum ? cleanCodeNum! : currentNum;
-        });
-      } catch (_) {}
     }
+
+    // A reserved number can become stale if old/imported records exist or another
+    // device was already creating a record. Never persist a duplicate file code.
+    let duplicate = await getPatientByCode(cleanCodeNum);
+    let attempts = 0;
+    while (duplicate && attempts < 10) {
+      cleanCodeNum = await getNextPatientCode();
+      duplicate = await getPatientByCode(cleanCodeNum);
+      attempts += 1;
+    }
+    if (duplicate) {
+      throw new Error('تعذر إنشاء رقم ملف فريد. حاول مرة أخرى.');
+    }
+
+    // Keep the counter ahead of any manually assigned code.
+    try {
+      const counterRef = ref(rtdb, 'counters/patients/current');
+      await runTransaction(counterRef, (curr) => {
+        const currentNum = typeof curr === 'number' ? curr : 1000;
+        return cleanCodeNum! >= currentNum ? cleanCodeNum! : currentNum;
+      });
+    } catch (_) {}
 
     const cleanName = patientData.name.trim();
     const now = Date.now();
@@ -159,6 +173,7 @@ export async function createPatient(
       co: patientData.co ? patientData.co.trim() : '',
       oe: patientData.oe ? patientData.oe.trim() : '',
       investigation: patientData.investigation ? patientData.investigation.trim() : '',
+      plan: patientData.plan ? patientData.plan.trim() : '',
       diagnosis: patientData.diagnosis ? patientData.diagnosis.trim() : '',
       rx: patientData.rx ? patientData.rx.trim() : '',
       status: patientData.status,
@@ -297,6 +312,7 @@ export async function updatePatientClinical(
     co: string;
     oe: string;
     investigation: string;
+    plan: string;
     diagnosis: string;
     rx: string;
   },
@@ -308,6 +324,7 @@ export async function updatePatientClinical(
       co: clinicalData.co,
       oe: clinicalData.oe,
       investigation: clinicalData.investigation,
+      plan: clinicalData.plan,
       diagnosis: clinicalData.diagnosis,
       rx: clinicalData.rx,
       updatedBy: user.uid,
