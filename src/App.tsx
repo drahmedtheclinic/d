@@ -7,6 +7,7 @@ import { PatientPage } from './components/PatientPage';
 import { StatsPage } from './components/StatsPage';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { listenToDoctorQueue } from './lib/patientsService';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 function AppContent() {
   const { activeRole } = useAuth();
@@ -100,7 +101,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
     </AuthProvider>
   );
 }

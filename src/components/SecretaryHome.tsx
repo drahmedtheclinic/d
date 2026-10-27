@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Patient, PatientStatus } from '../types';
 import {
@@ -33,6 +34,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
   onOpenPatient,
   showToast,
 }) => {
+  const { t, language } = useLanguage();
   const { userProfile } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +59,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       setRecentPatients(list);
     } catch (err) {
       console.error(err);
-      showToast('تعذر تحميل القائمة', 'error');
+      showToast(t('تعذر تحميل القائمة'), 'error');
     } finally {
       setLoadingRecent(false);
     }
@@ -74,7 +76,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       (err) => {
         console.error(err);
         setLoadingRecent(false);
-        showToast('تعذر الاتصال بـ Realtime Database: تأكد من تفعيل صلاحيات القراءة والكتابة في Rules', 'error');
+        showToast(t('تعذر الاتصال بـ Realtime Database: تأكد من تفعيل صلاحيات القراءة والكتابة في Rules'), 'error');
       }
     );
     return () => unsubscribe();
@@ -110,7 +112,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
 
     try {
       await updatePatientStatus(patient.id, 'sent_to_doctor', userProfile);
-      showToast(`تم إرسال المريض #${patient.code} إلى الدكتور`, 'success');
+      showToast(language === 'en' ? `Patient #${patient.code} sent to the doctor` : `تم إرسال المريض #${patient.code} إلى الدكتور`, 'success');
       await loadRecent();
       if (searchResults) {
         setSearchResults((prev) =>
@@ -119,7 +121,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       }
     } catch (err) {
       console.error(err);
-      showToast('حدث خطأ أثناء إرسال المريض', 'error');
+      showToast(t('حدث خطأ أثناء إرسال المريض'), 'error');
     }
   };
 
@@ -130,7 +132,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
 
     setRecentPatients((prev) => applyEdit(prev));
     setSearchResults((prev) => (prev ? applyEdit(prev) : null));
-    showToast(`تم حفظ تعديلات المريض #${updated.code} (${updated.name})`, 'success');
+    showToast(language === 'en' ? `Saved changes for patient #${updated.code} (${updated.name})` : `تم حفظ تعديلات المريض #${updated.code} (${updated.name})`, 'success');
   };
 
   // After permanently deleting a patient from the list
@@ -142,8 +144,8 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
     setSearchResults((prev) => (prev ? prev.filter((p) => p.id !== patientId) : null));
     showToast(
       deletedCode !== undefined
-        ? `تم حذف ملف المريض #${deletedCode} (${deletedName}) نهائيًا`
-        : 'تم حذف ملف المريض نهائيًا',
+        ? (language === 'en' ? `Patient record #${deletedCode} (${deletedName}) permanently deleted` : `تم حذف ملف المريض #${deletedCode} (${deletedName}) نهائيًا`)
+        : (language === 'en' ? 'Patient record permanently deleted' : 'تم حذف ملف المريض نهائيًا'),
       'success'
     );
   };
@@ -161,10 +163,10 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
       <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-stone-900">
-            سجلات المرضى
+            {t("سجلات المرضى")}
           </h2>
           <span className="text-xs text-stone-500">
-            المساعدة: {userProfile?.name}
+            {language === 'en' ? 'Reception:' : 'المساعدة:'} {userProfile?.name}
           </span>
         </div>
 
@@ -173,7 +175,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
           className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
-          <span>مريض جديد (+ استمارة)</span>
+          <span>{t("مريض جديد (+ استمارة)")}</span>
         </button>
       </div>
 
@@ -185,7 +187,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="اكتب رقم المريض (للإعادة) أو الاسم أو رقم الهاتف..."
+            placeholder={t("اكتب رقم المريض (للإعادة) أو الاسم أو رقم الهاتف...")}
             className="w-full pr-10 pl-10 py-2.5 bg-stone-50 border border-stone-300 rounded-lg text-sm font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white"
           />
           {searchQuery && (
@@ -193,14 +195,14 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
               onClick={() => setSearchQuery('')}
               className="absolute left-3.5 top-3 text-xs text-stone-400 hover:text-stone-700 cursor-pointer"
             >
-              مسح
+              {t("مسح")}
             </button>
           )}
         </div>
         {searching && (
           <p className="text-xs text-teal-700 mt-2 font-medium flex items-center gap-1">
             <RefreshCw className="w-3 h-3 animate-spin" />
-            <span>جاري البحث...</span>
+            <span>{t("جاري البحث...")}</span>
           </p>
         )}
       </div>
@@ -217,7 +219,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                   : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
               }`}
             >
-              الكل ({recentPatients.length})
+              {language === 'en' ? `All (${recentPatients.length})` : `الكل (${recentPatients.length})`}
             </button>
             <button
               onClick={() => setStatusFilter('sent_to_doctor')}
@@ -228,7 +230,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
               }`}
             >
               <Clock className="w-3 h-3" />
-              <span>في الانتظار ({recentPatients.filter(p => p.status === 'sent_to_doctor').length})</span>
+              <span>{language === 'en' ? `Waiting (${recentPatients.filter(p => p.status === 'sent_to_doctor').length})` : `في الانتظار (${recentPatients.filter(p => p.status === 'sent_to_doctor').length})`}</span>
             </button>
             <button
               onClick={() => setStatusFilter('seen')}
@@ -239,7 +241,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
               }`}
             >
               <CheckCircle className="w-3 h-3" />
-              <span>تم الكشف ({recentPatients.filter(p => p.status === 'seen').length})</span>
+              <span>{language === 'en' ? `Seen (${recentPatients.filter(p => p.status === 'seen').length})` : `تم الكشف (${recentPatients.filter(p => p.status === 'seen').length})`}</span>
             </button>
           </div>
 
@@ -247,7 +249,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
             onClick={loadRecent}
             disabled={loadingRecent}
             className="p-1.5 text-stone-500 hover:text-stone-800 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 cursor-pointer"
-            title="تحديث"
+            title={t("تحديث")}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingRecent ? 'animate-spin' : ''}`} />
           </button>
@@ -259,27 +261,27 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
         <div className="p-3 bg-stone-50 border-b border-stone-200 flex items-center justify-between text-xs text-stone-600">
           <span className="font-bold text-stone-800">
             {searchResults !== null
-              ? `نتائج البحث (${searchResults.length})`
-              : `سجلات المرضى (${displayList.length})`}
+              ? (language === 'en' ? `Search results (${searchResults.length})` : `نتائج البحث (${searchResults.length})`)
+              : (language === 'en' ? `Patient records (${displayList.length})` : `سجلات المرضى (${displayList.length})`)}
           </span>
         </div>
 
         {loadingRecent ? (
           <div className="p-8 text-center text-stone-500">
             <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-teal-600" />
-            <p className="text-xs">جاري التحميل...</p>
+            <p className="text-xs">{t("جاري التحميل...")}</p>
           </div>
         ) : displayList.length === 0 ? (
           <div className="p-8 text-center text-stone-500 space-y-2">
             <FolderOpen className="w-10 h-10 text-stone-300 mx-auto" />
-            <p className="font-bold text-stone-700 text-sm">لا توجد سجلات</p>
+            <p className="font-bold text-stone-700 text-sm">{t("لا توجد سجلات")}</p>
             {searchResults === null && (
               <button
                 onClick={() => setIsNewPatientModalOpen(true)}
                 className="mt-2 px-3 py-1.5 bg-teal-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>إضافة مريض جديد</span>
+                <span>{t("إضافة مريض جديد")}</span>
               </button>
             )}
           </div>
@@ -328,19 +330,19 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                   {p.status === 'sent_to_doctor' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">
                       <Clock className="w-3 h-3 text-amber-600" />
-                      <span>في الانتظار</span>
+                      <span>{t("في الانتظار")}</span>
                     </span>
                   )}
                   {p.status === 'seen' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900">
                       <CheckCircle className="w-3 h-3 text-emerald-600" />
-                      <span>تم الكشف</span>
+                      <span>{t("تم الكشف")}</span>
                     </span>
                   )}
                   {p.status === 'with_secretary' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone-100 text-stone-700">
                       <User className="w-3 h-3 text-stone-500" />
-                      <span>مسجل</span>
+                      <span>{t("مسجل")}</span>
                     </span>
                   )}
 
@@ -349,10 +351,10 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                     <button
                       onClick={(e) => handleQuickSend(p, e)}
                       className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded text-xs font-bold border border-amber-300 cursor-pointer"
-                      title="إرسال المريض لإعادة الكشف"
+                      title={t("إرسال المريض لإعادة الكشف")}
                     >
                       <Send className="w-3 h-3 text-amber-700" />
-                      <span>إعادة كشف</span>
+                      <span>{t("إعادة كشف")}</span>
                     </button>
                   ) : p.status !== 'sent_to_doctor' ? (
                     <button
@@ -360,7 +362,7 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                       className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded text-xs font-bold border border-amber-300 cursor-pointer"
                     >
                       <Send className="w-3 h-3 text-amber-700" />
-                      <span>إرسال للدكتور</span>
+                      <span>{t("إرسال للدكتور")}</span>
                     </button>
                   ) : null}
 
@@ -371,10 +373,10 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                       setPatientToEdit(p);
                     }}
                     className="flex items-center gap-1 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-900 rounded text-xs font-bold border border-teal-300 cursor-pointer"
-                    title="تعديل بيانات المريض (الاسم، الهاتف، السن، العنوان، الرقم)"
+                    title={t("تعديل بيانات المريض (الاسم، الهاتف، السن، العنوان، الرقم)")}
                   >
                     <Pencil className="w-3 h-3 text-teal-700" />
-                    <span>تعديل</span>
+                    <span>{t("تعديل")}</span>
                   </button>
 
                   {/* Delete patient record (secretary) */}
@@ -384,17 +386,17 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
                       setPatientToDelete(p);
                     }}
                     className="flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-900 rounded text-xs font-bold border border-rose-300 cursor-pointer"
-                    title="حذف ملف المريض نهائيًا"
+                    title={t("حذف ملف المريض نهائيًا")}
                   >
                     <Trash2 className="w-3 h-3 text-rose-700" />
-                    <span>حذف</span>
+                    <span>{t("حذف")}</span>
                   </button>
 
                   <button
                     onClick={() => onOpenPatient(p.id)}
                     className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded text-xs font-bold"
                   >
-                    فتح
+                    {t("فتح")}
                   </button>
                 </div>
               </div>
@@ -431,8 +433,8 @@ export const SecretaryHome: React.FC<SecretaryHomeProps> = ({
         onPatientCreated={(patientId, targetStatus) => {
           showToast(
             targetStatus === 'sent_to_doctor'
-              ? 'تم تسجيل المريض وإرساله لقائمة الانتظار'
-              : 'تم تسجيل ملف المريض',
+              ? t('تم تسجيل المريض وإرساله لقائمة الانتظار')
+              : t('تم تسجيل ملف المريض'),
             'success'
           );
           loadRecent();

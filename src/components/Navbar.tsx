@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import clinicImage from '../assets/clinic-image.jpg';
 import {
@@ -10,6 +11,7 @@ import {
   Check,
   Menu,
   X,
+  Languages,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   onGoHome,
 }) => {
+  const { t, language, toggleLanguage } = useLanguage();
   const { activeRole, switchRole, userProfile, updateStaffName } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userProfile.name);
@@ -55,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               type="button"
               onClick={goHome}
               className="min-w-0 flex flex-1 items-center text-right group cursor-pointer"
-              aria-label="د. أحمد عوض - الرئيسية"
+              aria-label={t("د. أحمد عوض - الرئيسية")}
             >
               <img
                 src={clinicImage}
@@ -67,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={goHome}
-              aria-label={`طابور الانتظار: ${queueCount}`}
+              aria-label={language === 'en' ? `Waiting queue: ${queueCount}` : `طابور الانتظار: ${queueCount}`}
               className={`min-w-0 max-w-24 sm:max-w-36 shrink-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border text-xs font-medium cursor-pointer ${
                 queueCount > 0
                   ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
@@ -75,14 +78,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <span className={`shrink-0 rounded-full h-2 w-2 ${queueCount > 0 ? 'bg-amber-600' : 'bg-stone-400'}`} />
-              <span className="hidden sm:inline">الانتظار:</span>
+              <span className="hidden sm:inline">{t("الانتظار:")}</span>
               <span className="min-w-0 truncate font-bold font-mono" dir="ltr">{queueCount}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsMenuOpen((open) => !open)}
-              aria-label={isMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+              aria-label={isMenuOpen ? t('إغلاق القائمة') : t('فتح القائمة')}
               aria-expanded={isMenuOpen}
               aria-controls="clinic-navigation"
               className="xl:hidden shrink-0 w-11 h-11 flex items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-700 cursor-pointer"
@@ -101,7 +104,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               }
             }}
           >
-            <nav aria-label="التنقل الرئيسي" className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="min-h-10 self-start xl:self-auto inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-teal-200 bg-teal-50 text-teal-900 text-xs font-bold hover:bg-teal-100 transition-colors cursor-pointer"
+              aria-label={language === 'ar' ? 'تغيير اللغة إلى الإنجليزية' : 'Switch language to Arabic'}
+            >
+              <Languages className="w-4 h-4" />
+              <span>{language === 'ar' ? 'English' : 'العربية'}</span>
+            </button>
+
+            <nav aria-label={t("التنقل الرئيسي")} className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
               <button
                 type="button"
                 onClick={goHome}
@@ -109,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`${tabClass} ${currentView === 'records' ? 'bg-white text-teal-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <FolderOpen className="shrink-0 w-4 h-4" />
-                <span className="min-w-0 break-words">السجلات</span>
+                <span className="min-w-0 break-words">{t("السجلات")}</span>
               </button>
               <button
                 type="button"
@@ -121,11 +134,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`${tabClass} ${currentView === 'stats' ? 'bg-white text-teal-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <BarChart3 className="shrink-0 w-4 h-4" />
-                <span className="min-w-0 break-words">الإحصائيات</span>
+                <span className="min-w-0 break-words">{t("الإحصائيات")}</span>
               </button>
             </nav>
 
-            <div role="group" aria-label="اختيار الدور" className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+            <div role="group" aria-label={t("اختيار الدور")} className="min-w-0 grid grid-cols-2 gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
               <button
                 type="button"
                 onClick={() => {
@@ -136,7 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`${tabClass} ${!isDoctor ? 'bg-sky-600 text-white shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <ClipboardList className="shrink-0 w-4 h-4" />
-                <span className="min-w-0 break-words">المساعدة</span>
+                <span className="min-w-0 break-words">{t("المساعدة")}</span>
               </button>
               <button
                 type="button"
@@ -148,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`${tabClass} ${isDoctor ? 'bg-emerald-700 text-white shadow-xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 <Stethoscope className="shrink-0 w-4 h-4" />
-                <span className="min-w-0 break-words">الدكتور</span>
+                <span className="min-w-0 break-words">{t("الدكتور")}</span>
               </button>
             </div>
 
@@ -157,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <>
                   <input
                     type="text"
-                    aria-label="اسم الموظف"
+                    aria-label={t("اسم الموظف")}
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     onKeyDown={(event) => {
@@ -166,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="min-w-0 w-full flex-1 px-1.5 py-1 bg-white border border-stone-300 rounded text-stone-800"
                     autoFocus
                   />
-                  <button type="button" onClick={handleSaveName} aria-label="حفظ الاسم" className="shrink-0 w-9 flex items-center justify-center p-2 bg-teal-600 text-white rounded hover:bg-teal-700">
+                  <button type="button" onClick={handleSaveName} aria-label={t("حفظ الاسم")} className="shrink-0 w-9 flex items-center justify-center p-2 bg-teal-600 text-white rounded hover:bg-teal-700">
                     <Check className="w-4 h-4" />
                   </button>
                 </>
@@ -180,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       setIsEditingName(true);
                     }}
                     className="shrink-0 w-9 flex items-center justify-center text-stone-500 hover:text-stone-700 p-2"
-                    aria-label="تعديل الاسم"
+                    aria-label={t("تعديل الاسم")}
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
